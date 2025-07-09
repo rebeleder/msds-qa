@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
@@ -53,6 +54,31 @@ class chemicalsDataSearchEngine:
             return json_object["obj"]["records"][0]["idenDataId"]
         else:
             return None
+
+    def get_all_ChemNames(self) -> list[str]:
+        """
+        获取所有化学品的名称
+
+        :return: 化学品的名称列表
+        """
+
+        payload = {
+            "status": "1",
+            "chemName": "",
+            "chemCas": "",
+            "chemEnglishName": "",
+            "isFuzzy": "0",
+            "page": {"current": "1", "size": 7173},
+        }
+
+        response = requests.post(
+            self.get_chem_id_url,
+            json=payload,
+            headers=self.headers,
+        )
+        json_object = response.json()
+
+        return [record["chemName"] for record in json_object["obj"]["records"]]
 
     def get_chemInfo(self, idenDataId: str) -> dict:
         """
@@ -127,7 +153,17 @@ class chemicalsDataSearchEngine:
                 print(f"Download Successfully")
         else:
             self.no_msds_chemicals.append(chemName)
-            print('')
+
+    def download_all_msds(self) -> None:
+        """
+        下载化学品的安全数据表
+
+        :param chemName: 化学品名称
+        """
+
+        chemNames = self.get_all_ChemNames()
+        with ThreadPoolExecutor() as executor:
+            list(executor.map(self.download_msds_by_name, chemNames))
 
     def test_get_idenDataId(self):
         chemName = "氟化铵"
@@ -161,4 +197,4 @@ if __name__ == "__main__":
     print(f"化学品信息: {chem_info['chemName']}")
     print(f"安全文件名称: {file_info['safetyFileName']}")
     print(f"安全文件下载地址: {file_info['safetyFileUrl']}")
-    search_engine.test_download_msds_by_name()
+    search_engine.download_all_msds()
