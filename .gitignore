@@ -2,3 +2,4 @@ assets
 __pycache__
 .DS_Store
 kb
+.env

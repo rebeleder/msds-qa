@@ -1,12 +1,16 @@
+from dotenv import load_dotenv
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain.prompts import ChatPromptTemplate
 
 from src.agent import BasicQaAgent, KbQaAgent
 from src.db import FaissDB
-from src.model import OllamaClient
+from src.model import OllamaClient, SiliconflowClient
 
-ollama_client = OllamaClient()
-chat_model, embed_model = ollama_client.get_chat_embed_model()
+load_dotenv()
+
+chat_model = SiliconflowClient().get_chat_model()
+embed_model = OllamaClient().get_embed_model()
+
 
 db = FaissDB(
     db_path="/root/Documents/msds-qa/kb",
@@ -14,13 +18,20 @@ db = FaissDB(
 ).get_db()
 
 
-tools = [BasicQaAgent(chat_model=chat_model), KbQaAgent(db=db, chat_model=chat_model)]
+tools = [
+    BasicQaAgent(chat_model=chat_model),
+    KbQaAgent(
+        db=db,
+        chat_model=chat_model,
+        description="专为化学物质相关问题设计",
+    ),
+]
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a helpful assistant that can answer questions about normal topics and knowledge bases.",
+            "你是一个专业的问答助手，能够借助工具回答用户的问题。你需要严格地按照回答者的角度来回答问题。问什么答什么",
         ),
         ("human", "{query}"),
         ("placeholder", "{agent_scratchpad}"),  # Agent 用于记录思考和工具调用的地方
@@ -31,4 +42,4 @@ prompt = ChatPromptTemplate.from_messages(
 agent = create_tool_calling_agent(chat_model, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-print(agent_executor.invoke({"query": "在知识库中查询一下：连上wifi能看电影吗？"}))
+agent_executor.invoke({"query": "2-丙醇会造成哪些健康危害？"})

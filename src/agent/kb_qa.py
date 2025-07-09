@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Type
 
 from langchain.callbacks.manager import (
@@ -57,7 +58,7 @@ class KbQaAgent(BaseTool):
         query: str,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
-        """大语言模型使用知识库回答wifi问题"""
+        """大语言模型使用知识库回答知识库问题"""
         retriever = self._db.as_retriever(
             search_type="similarity",
             search_kwargs={"k": 5},
@@ -81,6 +82,6 @@ class KbQaAgent(BaseTool):
     def format_context(self, context: list[Document]) -> str:
         ret = ""
         for idx, doc in enumerate(context):
-            ret += f"信息片段 {idx + 1}：{doc.page_content}\n"
+            ret += f"\n\n{os.path.splitext(os.path.basename(doc.metadata['source']))[0]} 相关信息 \n ---------- {idx + 1}：{doc.page_content}----------\n\n"
 
         return ret.strip()

@@ -2,6 +2,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
+from tqdm import tqdm
 
 
 class chemicalsDataSearchEngine:
@@ -50,7 +51,7 @@ class chemicalsDataSearchEngine:
         )
         json_object = response.json()
 
-        if json_object["obj"]["records"]:
+        if json_object["obj"] is not None and json_object["obj"]["records"]:
             return json_object["obj"]["records"][0]["idenDataId"]
         else:
             return None
@@ -139,7 +140,6 @@ class chemicalsDataSearchEngine:
             file_name = file_info["safetyFileName"].split("@")[0]
             file_path = os.path.join(self.file_dir, f"{file_name}.pdf")
 
-            # 如果文件存在，则跳过下载
             if not os.path.exists(file_path):
                 response = requests.get(
                     file_info["safetyFileUrl"],
@@ -162,8 +162,20 @@ class chemicalsDataSearchEngine:
         """
 
         chemNames = self.get_all_ChemNames()
-        with ThreadPoolExecutor() as executor:
-            list(executor.map(self.download_msds_by_name, chemNames))
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            list(
+                tqdm(
+                    executor.map(self.download_msds_by_name, chemNames),
+                    total=len(chemNames),
+                    desc="Downloading MSDS",
+                    colour="green",
+                )
+            )
+        with open("/root/Documents/msds-qa/scripts/no_msds_chemicals.txt", "a") as f:
+            for chem in self.no_msds_chemicals:
+                f.write(f"{chem}\n")
+        # for chemName in tqdm(chemNames):
+        #     self.download_msds_by_name(chemName)
 
     def test_get_idenDataId(self):
         chemName = "氟化铵"
