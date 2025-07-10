@@ -1,8 +1,8 @@
 import os
-from concurrent.futures import ThreadPoolExecutor
 
 import requests
-from tqdm import tqdm
+
+from src.toolkits import parallel_map
 
 
 class chemicalsDataSearchEngine:
@@ -162,38 +162,37 @@ class chemicalsDataSearchEngine:
         """
 
         chemNames = self.get_all_ChemNames()
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            list(
-                tqdm(
-                    executor.map(self.download_msds_by_name, chemNames),
-                    total=len(chemNames),
-                    desc="Downloading MSDS",
-                    colour="green",
-                )
-            )
+
+        parallel_map(
+            self.download_msds_by_name,
+            chemNames,
+            max_workers=10,
+            enable_tqdm=True,
+        )
+
         with open("/root/Documents/msds-qa/scripts/no_msds_chemicals.txt", "a") as f:
             for chem in self.no_msds_chemicals:
                 f.write(f"{chem}\n")
         # for chemName in tqdm(chemNames):
         #     self.download_msds_by_name(chemName)
 
-    def test_get_idenDataId(self):
+    def test_get_idenDataId(self) -> str:
         chemName = "氟化铵"
         idenDataId = self.get_idenDataId(chemName)
         return idenDataId
 
-    def test_get_chemInfo(self):
+    def test_get_chemInfo(self) -> dict:
         idenDataId = "B2BFE2FE-225C-43F6-972D-32335472CAF9"
         chem_info = self.get_chemInfo(idenDataId)
         return chem_info
 
-    def test_get_fileInfo(self):
+    def test_get_fileInfo(self) -> dict:
         idenDataId = "B2BFE2FE-225C-43F6-972D-32335472CAF9"
         chem_info = self.get_chemInfo(idenDataId)
         file_info = self.get_fileInfo(chem_info)
         return file_info
 
-    def test_download_msds_by_name(self):
+    def test_download_msds_by_name(self) -> None:
         chemName = "氟化铵"
         self.download_msds_by_name(chemName)
 

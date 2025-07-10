@@ -1,6 +1,9 @@
 from typing import Optional, Type
 
-from langchain.callbacks.manager import AsyncCallbackManagerForToolRun, CallbackManagerForToolRun # fmt: skip
+from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
 from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -11,11 +14,19 @@ class BasicQaQuery(BaseModel):
 
 
 class BasicQaAgent(BaseTool):
-    name: str = "basic_qa_agent"
-    description: str = "用通用大语言模型回答通用问题"
+    """基本问答代理
+    Args:
+        name (str): 工具名称
+        description (str): 工具描述
+
+    Returns:
+        基本问答代理工具实例 (BaseTool)
+    """
+    name: str
+    description: str
     args_schema: Type[BaseModel] = BasicQaQuery
 
-    def __init__(self, chat_model: BaseChatModel, **kwargs):
+    def __init__(self, chat_model: BaseChatModel, **kwargs) -> None:
         super().__init__(**kwargs)
         self._chat_model = chat_model
 

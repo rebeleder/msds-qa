@@ -4,13 +4,12 @@ from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
 
+from src.config import hp
+
 
 class FaissDB:
-    def __init__(
-        self,
-        db_path: str,
-        embed_model: Embeddings,
-    ) -> None:
+
+    def __init__(self, db_path: str, embed_model: Embeddings) -> None:
         self.db_path: str = db_path
         self.embed_model: Embeddings = embed_model
         self.db: FAISS = self.load_db()
@@ -22,10 +21,13 @@ class FaissDB:
     def create_db(self, documents: list[Document]) -> FAISS:
         """创建FAISS数据库"""
         try:
-            db = FAISS.from_documents(
-                documents,
-                self.embed_model,
-            )
+            for idx in range(0, len(documents), hp.max_batch_size):
+                if idx == 0:
+                    db = FAISS.from_documents(
+                        documents[idx : idx + hp.max_batch_size], self.embed_model
+                    )
+                else:
+                    db.add_documents(documents[idx : idx + hp.max_batch_size])
             db.save_local(self.db_path)
             return db
         except Exception:

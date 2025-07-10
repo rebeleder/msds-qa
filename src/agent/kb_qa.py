@@ -14,15 +14,14 @@ from pydantic import BaseModel, Field
 
 class KbQaQuery(BaseModel):
     query: str = Field(..., description="要回答的问题")
-    # kb_name: str = Field(..., description="知识库名称")
 
 
 class KbQaAgent(BaseTool):
-    name: str = "kb_qa_agent"
-    description: str = "大语言模型用知识库回答wifi问题"
+    name: str
+    description: str
     args_schema: Type[BaseModel] = KbQaQuery
 
-    def __init__(self, db: FAISS, chat_model: BaseChatModel, **kwargs):
+    def __init__(self, db: FAISS, chat_model: BaseChatModel, **kwargs) -> None:
         super().__init__(**kwargs)
         self._db = db
         self._chat_model = chat_model
@@ -32,7 +31,6 @@ class KbQaAgent(BaseTool):
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
-        """大语言模型使用知识库回答wifi问题"""
         retriever = self._db.as_retriever(
             search_type="similarity",
             search_kwargs={"k": 5},

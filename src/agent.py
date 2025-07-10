@@ -8,22 +8,25 @@ from src.model import OllamaClient, SiliconflowClient
 
 load_dotenv()
 
-chat_model = SiliconflowClient().get_chat_model()
-embed_model = OllamaClient().get_embed_model()
+client = OllamaClient()
+chat_model = client.get_chat_model()
+embed_model = client.get_embed_model()
 
 
-db = FaissDB(
-    db_path="/root/Documents/msds-qa/kb",
-    embed_model=embed_model,
-).get_db()
+db = FaissDB(db_path="/root/Documents/msds-qa/kb", embed_model=embed_model).get_db()
 
 
 tools = [
-    BasicQaAgent(chat_model=chat_model),
+    BasicQaAgent(
+        chat_model=chat_model,
+        name="通用问答代理",
+        description="用通用大语言模型回答通用问题",
+    ),
     KbQaAgent(
         db=db,
         chat_model=chat_model,
-        description="专为化学物质相关问题设计",
+        name="化工行业化学物质问答代理",
+        description="专为化学物质相关问题设计，当用户询问某些物种的msds相关内容时，使用知识库回答问题",
     ),
 ]
 

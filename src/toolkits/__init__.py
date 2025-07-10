@@ -1,1 +1,1 @@
-from .decorator import test_it
+from .funcs import parallel_map, test_it

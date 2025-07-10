@@ -1,18 +1,21 @@
 import itertools
 import os
 import shutil
-from concurrent.futures import ThreadPoolExecutor
 
 from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
+from langchain_core.embeddings import Embeddings
 
+from src.config import hp
 from src.db import FaissDB
-from src.model import OllamaClient
+from src.model import OllamaClient, SiliconflowClient
 from src.parser import FileChecker
+from src.toolkits import parallel_map
 
-ollama_client = OllamaClient()
+client = OllamaClient()
+# client = SiliconflowClient()
 
 
 def get_files_from_kb_space(kb_path: str) -> list[str]:
@@ -39,20 +42,41 @@ def get_files_from_kb_space(kb_path: str) -> list[str]:
 class MSDSParser:
     def __init__(self, files: list[str] | str):
         self.files: list[str] = files if isinstance(files, list) else [files]
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=hp.max_chunk_size)  # fmt: skip
         self.loader = PyPDFLoader
 
+    def format_context(self, context: Document) -> Document:
+        source = context.metadata["source"]
+        file_name = os.path.basename(source)
+        context.page_content = f"<{file_name}> : {context.page_content}"
+        return context
+
     def invoke(self) -> list[Document]:
-        documents = [self.loader(file).load_and_split() for file in self.files]
-        documents = list(itertools.chain.from_iterable(documents))
+
+        def load_and_format(file) -> list[Document]:
+            docs = self.loader(file).load_and_split(self.text_splitter)
+            return [self.format_context(doc) for doc in docs]
+
+        documents = list(
+            itertools.chain.from_iterable(
+                parallel_map(
+                    load_and_format,
+                    self.files,
+                    max_workers=10,
+                    enable_tqdm=True,
+                )
+            )
+        )
         return documents
 
 
 class MSDS2DB:
+
     def __init__(
         self,
         files: list[str] | str,
         db_path: str = "/root/Documents/msds-qa/kb",
-        embed_model: OllamaEmbeddings = ollama_client.get_embed_model(),
+        embed_model: Embeddings = client.get_embed_model(),
     ) -> None:
         self.files: list[str] = files if isinstance(files, list) else [files]
         self.parser = MSDSParser
@@ -64,16 +88,14 @@ class MSDS2DB:
 
         os.makedirs(os.path.join(self.db.db_path, "files"), exist_ok=True)
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            list(
-                executor.map(
-                    lambda file: shutil.copy(
-                        file,
-                        os.path.join(self.db.db_path, "files", os.path.basename(file)),
-                    ),
-                    self.files,
-                )
-            )
+        parallel_map(
+            lambda file: shutil.copy(
+                file, os.path.join(self.db.db_path, "files", os.path.basename(file))
+            ),
+            self.files,
+            max_workers=10,
+            enable_tqdm=True,
+        )
         return db
 
 

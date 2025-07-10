@@ -11,4 +11,7 @@ class hp:
     siliconflow_chat_model: str = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
     siliconflow_embedding_model: str = "BAAI/bge-large-zh-v1.5"
 
+    max_batch_size: int = 32
+    max_chunk_size: int = 256
+
     knowledge_space: str = "/root/Documents/msds-qa/kb"
