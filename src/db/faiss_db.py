@@ -1,22 +1,31 @@
+import logging
 import os
+import shutil
 
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores.base import VectorStoreRetriever
 
 from src.config import hp
+from src.toolkits import check_db_exists, parallel_map
 
 
 class FaissDB:
 
-    def __init__(self, db_path: str, embed_model: Embeddings) -> None:
+    def __init__(self, db_path: str, embed_model: Embeddings, **kwargs) -> None:
         self.db_path: str = db_path
         self.embed_model: Embeddings = embed_model
+        self.documents: list[Document] = kwargs.get("documents", [])
+        self.db_exists = self.is_db_exists()
         self.db: FAISS = self.load_db()
+
+    def __post_init__(self):
+        del self.documents
 
     def is_db_exists(self) -> bool:
         """检查FAISS数据库是否存在"""
-        return os.path.exists(self.db_path)
+        return os.path.exists(self.db_path) and os.path.isdir(self.db_path)
 
     def create_db(self, documents: list[Document]) -> FAISS:
         """创建FAISS数据库"""
@@ -29,27 +38,40 @@ class FaissDB:
                 else:
                     db.add_documents(documents[idx : idx + hp.max_batch_size])
             db.save_local(self.db_path)
-            return db
+
+            os.makedirs(os.path.join(self.db_path, "files"), exist_ok=True)
+
+            parallel_map(
+                lambda file: shutil.copy(
+                    file, os.path.join(self.db_path, "files", os.path.basename(file))
+                ),
+                set([doc.metadata["source"] for doc in documents]),
+                max_workers=10,
+                enable_tqdm=True,
+            )
+
+            logging.info(f"FAISS数据库已创建并保存到 {self.db_path}")
         except Exception:
             raise ValueError("无法创建FAISS数据库，请检查文档和嵌入模型是否正确")
-
+        return db
     def load_db(self) -> FAISS:
         """加载FAISS数据库"""
-        try:
-            if self.is_db_exists():
+        if self.db_exists:
+            try:
                 db = FAISS.load_local(
-                    self.db_path,
-                    self.embed_model,
-                    allow_dangerous_deserialization=True,
+                    self.db_path, self.embed_model, allow_dangerous_deserialization=True
                 )
                 return db
-        except Exception:
-            raise ValueError(f"无法加载路径位于 {self.db_path} 的FAISS数据库")
+            except Exception:
+                raise ValueError(f"无法加载路径位于 {self.db_path} 的FAISS数据库")
+        else:
+            if not self.documents:
+                raise ValueError("数据库不存在且未提供文档，无法创建FAISS数据库。")
+            else:
+                return self.create_db(self.documents)
 
     def get_db(self) -> FAISS:
         """获取FAISS数据库实例"""
-        if not self.db:
-            raise ValueError("FAISS数据库未加载或不存在")
         return self.db
 
     def save_db(self, db_path: str = None):
@@ -60,15 +82,15 @@ class FaissDB:
         except Exception:
             raise ValueError(f"无法保存FAISS数据库到路径 {db_path}")
 
-    # def delete_db(self) -> None:
-    #     """删除FAISS数据库"""
-    #     try:
-    #         if os.path.exists(self.db_path):
-    #             os.remove(self.db_path)
-    #         else:
-    #             raise FileNotFoundError(f"FAISS数据库文件不存在")
-    #     except Exception:
-    #         raise ValueError(f"无法删除FAISS数据库文件 {self.db_path}")
+    @check_db_exists
+    def delete_db(self) -> None:
+        """删除FAISS数据库"""
+        try:
+            shutil.rmtree(self.db_path)
+            logging.info(f"FAISS数据库文件 {self.db_path} 已删除")
+
+        except Exception:
+            raise ValueError(f"无法删除FAISS数据库文件 {self.db_path}")
 
     def add_to_db(self, documents: list[Document]) -> None:
         """将文档添加到FAISS数据库"""
@@ -78,11 +100,11 @@ class FaissDB:
         except Exception:
             raise ValueError("无法将文档向量化并添加到FAISS数据库")
 
-    def get_retriever(self, search_type: str = "similarity", k: int = 5):
+    def get_retriever(self, k: int = 5) -> VectorStoreRetriever:
         """获取检索器"""
         return self.db.as_retriever(
-            search_type=search_type,
-            search_kwargs={"k": k},
+            search_type="similarity_score_threshold",
+            search_kwargs={"k": 10, "score_threshold": 0.15},
         )
 
 
@@ -114,6 +136,10 @@ if __name__ == "__main__":
         for d in real_documents_data
     ]
 
-    db = FAISS.from_documents(real_docs, embed_model)
+    db = FaissDB(
+        db_path="/root/Documents/msds-qa/kb",
+        embed_model=embed_model,
+        documents=real_docs,
+    )
 
-    db.save_local("/root/Documents/msds-qa/kb")
+    db.delete_db()

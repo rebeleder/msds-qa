@@ -2,8 +2,8 @@ import os
 
 
 class FileChecker:
-    def __init__(self):
 
+    def __init__(self) -> None:
         self.supported_suffixes = self.get_supported_suffixes()
 
     def is_suffix_valid(self, file_path: str, suffix: list[str]) -> bool:

@@ -48,7 +48,7 @@ class MSDSParser:
     def format_context(self, context: Document) -> Document:
         source = context.metadata["source"]
         file_name = os.path.basename(source)
-        context.page_content = f"<{file_name}> : {context.page_content}"
+        context.page_content = f"<{file_name}>\n: {context.page_content}"
         return context
 
     def invoke(self) -> list[Document]:
@@ -80,26 +80,28 @@ class MSDS2DB:
     ) -> None:
         self.files: list[str] = files if isinstance(files, list) else [files]
         self.parser = MSDSParser
-        self.db = FaissDB(db_path, embed_model=embed_model)
+        self.db_path: str = db_path
+        self.db = self.get_db()
 
-    def invoke(self) -> FAISS:
+    def get_documents(self) -> FAISS:
         documents = self.parser(self.files).invoke()
-        db = self.db.create_db(documents)
 
-        os.makedirs(os.path.join(self.db.db_path, "files"), exist_ok=True)
+        return documents
 
-        parallel_map(
-            lambda file: shutil.copy(
-                file, os.path.join(self.db.db_path, "files", os.path.basename(file))
-            ),
-            self.files,
-            max_workers=10,
-            enable_tqdm=True,
+    def get_db(self) -> FAISS:
+        if os.path.exists(self.db_path) and os.path.isdir(self.db_path):
+            documents = []
+        else:
+            documents = self.get_documents()
+
+        db = FaissDB(
+            db_path=self.db_path,
+            embed_model=client.get_embed_model(),
+            documents=documents,
         )
-        return db
+        return db.get_db()
 
 
 if __name__ == "__main__":
     kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:5]
     msds2db = MSDS2DB(files=kb_files)
-    msds2db.invoke()

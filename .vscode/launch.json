@@ -1,0 +1,19 @@
+{
+    "configurations": [
+
+        {
+            "name": "智能体主入口",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/agent/agent.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "msds_pipeline",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/parser/msds_pipe.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}

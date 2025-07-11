@@ -7,6 +7,22 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 
 
+# def handler_exception(func):
+#     """
+#     异常处理修饰器
+#     """
+
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         try:
+#             return func(*args, **kwargs)
+#         except Exception as e:
+#             logging.error(f"Error in {func.__name__}: {e}")
+#             raise
+
+#     return wrapper
+
+
 def test_it(func):  #
 
     @wraps(func)
@@ -16,6 +32,17 @@ def test_it(func):  #
 
         logging.info(f"{func.__name__}() return {result}")
         return result
+
+    return wrapper
+
+
+def check_db_exists(func):
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.is_db_exists:
+            raise ValueError("数据库不存在，无法执行此操作")
+        return func(self, *args, **kwargs)
 
     return wrapper
 
