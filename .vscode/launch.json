@@ -5,7 +5,7 @@
             "name": "智能体主入口",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/agent/agent.py",
+            "program": "${workspaceFolder}/src/core/agent.py",
             "console": "integratedTerminal"
         },
         {
