@@ -1,6 +1,5 @@
 import itertools
 import os
-import shutil
 
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -16,27 +15,6 @@ from src.toolkits import parallel_map
 
 client = OllamaClient()
 # client = SiliconflowClient()
-
-
-def get_files_from_kb_space(kb_path: str) -> list[str]:
-    """
-    获取指定路径下的所有PDF文件
-
-    :param kb_path: 存储MSDS的知识库路径
-
-    :return: 知识文件列表
-    """
-    file_checker = FileChecker()
-    if not os.path.exists(kb_path):
-        raise ValueError(f"路径 {kb_path} 不存在")
-
-    files = []
-    for file in os.listdir(kb_path):
-        file_path = os.path.join(kb_path, file)
-        if file_checker.is_file_valid(file_path):
-            files.append(file_path)
-
-    return files
 
 
 class MSDSParser:
@@ -103,5 +81,7 @@ class MSDS2DB:
 
 
 if __name__ == "__main__":
-    kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:5]
+    from src.toolkits import get_files_from_kb_space
+
+    kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:10]
     msds2db = MSDS2DB(files=kb_files)

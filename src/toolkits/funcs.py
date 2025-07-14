@@ -1,8 +1,11 @@
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 
 from tqdm import tqdm
+
+from src.parser import FileChecker
 
 logging.basicConfig(level=logging.INFO)
 
@@ -78,3 +81,24 @@ def parallel_map(
         else:
             results = list(executor.map(func, container))
     return results
+
+
+def get_files_from_kb_space(kb_path: str) -> list[str]:
+    """
+    获取指定路径下的所有PDF文件
+
+    :param kb_path: 存储MSDS的知识库路径
+
+    :return: 知识文件列表
+    """
+    file_checker = FileChecker()
+    if not os.path.exists(kb_path):
+        raise ValueError(f"路径 {kb_path} 不存在")
+
+    files = []
+    for file in os.listdir(kb_path):
+        file_path = os.path.join(kb_path, file)
+        if file_checker.is_file_valid(file_path):
+            files.append(file_path)
+
+    return files

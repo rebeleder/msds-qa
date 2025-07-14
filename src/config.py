@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class hp:
-    ollama_host: str = "http://192.168.215.3:11434"
+    ollama_host: str = "http://192.168.215.4:11434"
     ollama_chat_model: str = "qwen3:0.6b"
     ollama_embedding_model: str = "nomic-embed-text:latest"
 
@@ -16,3 +16,7 @@ class hp:
     max_chunk_size: int = 256
 
     knowledge_space: str = "/root/Documents/msds-qa/kb"
+
+    neo4j_bolt_url: str = "bolt://192.168.215.3:7687"
+    neo4j_username: str = "neo4j"
+    neo4j_password: str = "password"
