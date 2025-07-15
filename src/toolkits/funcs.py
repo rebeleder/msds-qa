@@ -5,8 +5,6 @@ from functools import wraps
 
 from tqdm import tqdm
 
-from src.parser import FileChecker
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -91,6 +89,8 @@ def get_files_from_kb_space(kb_path: str) -> list[str]:
 
     :return: 知识文件列表
     """
+    from src.parser import FileChecker
+
     file_checker = FileChecker()
     if not os.path.exists(kb_path):
         raise ValueError(f"路径 {kb_path} 不存在")

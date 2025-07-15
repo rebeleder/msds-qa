@@ -1,6 +1,7 @@
-{
-    "terminal.integrated.env.linux": {
-        "PYTHONPATH": "${workspaceFolder}"
-    },
-    "debugpy.debugJustMyCode": false,
-}
+    {
+        "editor.formatOnSave": true,
+        "terminal.integrated.env.windows": {
+            "PYTHONPATH": "${workspaceFolder}"
+        },
+        "debugpy.debugJustMyCode": true
+    }

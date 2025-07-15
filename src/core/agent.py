@@ -3,13 +3,14 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
-
-from src.core import ToolSet
+import json
+import pprint
 from src.db import FaissDB
 from src.model import OllamaClient, SiliconflowClient
+from src.core import ToolSet
 
 chat_model = SiliconflowClient().get_chat_model()
-embed_model = OllamaClient().get_embed_model()
+embed_model = SiliconflowClient().get_embed_model()
 
 
 def get_graph(tools: list) -> CompiledStateGraph:
@@ -32,7 +33,7 @@ def get_graph(tools: list) -> CompiledStateGraph:
     return app
 
 
-db = FaissDB(db_path="/root/Documents/msds-qa/kb", embed_model=embed_model)
+db = FaissDB(db_path="./kb", embed_model=embed_model)
 
 
 tools = [
@@ -54,9 +55,24 @@ out = graph.invoke(
             },
             {
                 "role": "human",
-                "content": "1,1-二甲基环己烷与火反应会生成某些有害气体，请问这些气体有哪些？",
+                "content": "1,1-二甲基环己烷与火反应会生成某些有害气体，请问这些气体有哪些？请务必调用工具，给出准确、靠谱的结果。",
             },
         ]
     },
     config={"configurable": {"thread_id": 42}},
 )
+
+
+if __name__ == "__main__":
+    serializable = {
+        "messages": [
+            {
+            "type": type(m).__name__,
+            "content": m.content
+            }
+        for m in out["messages"]
+    ]
+    }
+
+# print(json.dumps(serializable, indent=2, ensure_ascii=False))
+pprint.pprint(serializable)

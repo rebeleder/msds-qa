@@ -1,6 +1,6 @@
-assets
+assets/
 __pycache__
 .DS_Store
-kb
+kb/
 .env
 scripts/no_msds_chemicals.txt

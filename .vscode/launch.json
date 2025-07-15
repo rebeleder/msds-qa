@@ -1,19 +1,45 @@
 {
     "configurations": [
-
         {
             "name": "智能体主入口",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/core/agent.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}", // 添加PYTHONPATH才能找到自定义模块
+            },
             "console": "integratedTerminal"
         },
         {
-            "name": "msds_pipeline",
+            "name": "msds_pipe",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/parser/msds_pipe.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+            },
+            "justMyCode": true,
+            // "python": "${command:python.interpreterPath}",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "st_main",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${workspaceFolder}/webui/st_main.py",
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "SSL_CERT_FILE": "",
+            },
+            "justMyCode": true,
+            "python": "${command:python.interpreterPath}",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

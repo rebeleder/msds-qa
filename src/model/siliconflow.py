@@ -1,11 +1,13 @@
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+import dotenv
 
 from src.config import hp
 
-
+dotenv.load_dotenv()
 class SiliconflowClient:
-    def __init__(self, base_url: str = hp.siliconflow_base_url) -> None:
+    def __init__(self, base_url: str = hp.siliconflow_base_url, api_key: str = hp.siliconflow_api_key) -> None:
         self.base_url = base_url
+        self.api_key = api_key
         self.chat_model = self.get_chat_model()
         self.embed_model = self.get_embed_model()
 

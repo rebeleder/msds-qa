@@ -22,7 +22,7 @@ class chemicalsDataSearchEngine:
             "Content-Type": "application/json",
         }
 
-        self.file_dir = "/root/Documents/msds-qa/assets"
+        self.file_dir = "./assets"
 
         self.no_msds_chemicals = []
 

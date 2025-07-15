@@ -38,6 +38,7 @@ class MsdsParser:
         return context
 
     def invoke(self) -> list[Document]:
+        
 
         def load_and_format(file) -> list[Document]:
             docs = self.loader(file).load_and_split(self.text_splitter)

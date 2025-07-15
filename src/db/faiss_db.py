@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import dotenv
 
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
@@ -109,12 +110,15 @@ class FaissDB:
 
 
 if __name__ == "__main__":
-    from langchain_ollama import OllamaEmbeddings
+    # from langchain_ollama import OllamaEmbeddings
+    from src.model import SiliconflowClient
 
-    embed_model = OllamaEmbeddings(
-        model="nomic-embed-text:latest",
-        base_url="http://192.168.215.3:11434",
-    )
+    # embed_model = SiliconflowClient.get_embed_model(
+    #     embed_model_name=hp.siliconflow_embedding_model,
+    #     # base_url=hp.siliconflow_base_url,
+    # )
+
+    embed_model = SiliconflowClient().embed_model
 
     real_documents_data = [
         {
@@ -137,7 +141,7 @@ if __name__ == "__main__":
     ]
 
     db = FaissDB(
-        db_path="/root/Documents/msds-qa/kb",
+        db_path="./kb",
         embed_model=embed_model,
         documents=real_docs,
     )
