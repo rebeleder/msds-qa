@@ -17,7 +17,10 @@ class hp:
     max_chunk_size: int = 256
 
     knowledge_space: str = "./kb"
+    knowledge_file_path: str = "./assets"
 
     neo4j_bolt_url: str = "bolt://127.0.0.1:7687"
     neo4j_username: str = "neo4j"
     neo4j_password: str = "password"
+
+    entity_extract_max_gleaning_rounds: int = 1

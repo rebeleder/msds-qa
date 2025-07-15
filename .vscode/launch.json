@@ -14,7 +14,15 @@
             "name": "msds_pipe",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/parser/msds_pipe.py",
+            "program": "${workspaceFolder}/src/pipe/msds_pipe.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "graph_database_pipe",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/pipe/graph_database_pipe.py",
+            "console": "integratedTerminal""program": "${workspaceFolder}/src/parser/msds_pipe.py",
             "console": "integratedTerminal",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",

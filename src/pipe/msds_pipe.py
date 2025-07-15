@@ -47,5 +47,5 @@ class Msds2DB:
 if __name__ == "__main__":
     from src.toolkits import get_files_from_kb_space
 
-    kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:10]
+    kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:5]
     msds2db = Msds2DB(files=kb_files)

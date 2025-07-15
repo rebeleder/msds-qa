@@ -5,6 +5,7 @@ from functools import wraps
 
 from tqdm import tqdm
 
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -102,3 +103,10 @@ def get_files_from_kb_space(kb_path: str) -> list[str]:
             files.append(file_path)
 
     return files
+
+
+def convert_to_openai_messages(*args: str) -> list[dict[str, str]]:
+    roles = ["user", "assistant"]
+    return [
+        {"role": roles[i % 2], "content": content} for i, content in enumerate(args)
+    ]
