@@ -16,7 +16,10 @@ class hp:
     max_chunk_size: int = 256
 
     knowledge_space: str = "/root/Documents/msds-qa/kb"
+    knowledeg_file_path: str = "/root/Documents/msds-qa/assets"
 
     neo4j_bolt_url: str = "bolt://192.168.215.3:7687"
     neo4j_username: str = "neo4j"
     neo4j_password: str = "password"
+
+    entity_extract_max_gleaning_rounds: int = 1
