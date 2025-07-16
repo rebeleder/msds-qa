@@ -63,16 +63,16 @@ out = graph.invoke(
 )
 
 
-if __name__ == "__main__":
-    serializable = {
-        "messages": [
-            {
-            "type": type(m).__name__,
-            "content": m.content
-            }
-        for m in out["messages"]
-    ]
-    }
+
+serializable = {
+    "messages": [
+        {
+        "type": type(m).__name__,
+        "content": m.content
+        }
+    for m in out["messages"]
+]
+}
 
 # print(json.dumps(serializable, indent=2, ensure_ascii=False))
 pprint.pprint(serializable)

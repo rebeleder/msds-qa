@@ -37,5 +37,5 @@ def main():
         else:
             st.warning("请输入问题")
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

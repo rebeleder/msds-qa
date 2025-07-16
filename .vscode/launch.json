@@ -21,8 +21,7 @@
             "name": "graph_database_pipe",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/pipe/graph_database_pipe.py",
-            "console": "integratedTerminal""program": "${workspaceFolder}/src/parser/msds_pipe.py",
+            "program": "${workspaceFolder}/src/parser/msds_pipe.py",
             "console": "integratedTerminal",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",
@@ -39,6 +38,24 @@
             "args": [
                 "run",
                 "${workspaceFolder}/webui/st_main.py",
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "SSL_CERT_FILE": "",
+            },
+            "justMyCode": true,
+            "python": "${command:python.interpreterPath}",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "st_demo",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${workspaceFolder}/webui/st_official_demo.py",
             ],
             "console": "integratedTerminal",
             "env": {
