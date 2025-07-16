@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from typing import Optional
 
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
@@ -74,7 +75,7 @@ class FaissDB:
         """获取FAISS数据库实例"""
         return self.db
 
-    def save_db(self, db_path: str = None):
+    def save_db(self, db_path: Optional[str] = None):
         """保存FAISS数据库"""
         db_path = db_path if db_path else self.db_path
         try:

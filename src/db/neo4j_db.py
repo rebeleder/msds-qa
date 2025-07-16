@@ -5,6 +5,7 @@ from src.config import hp
 
 
 class Neo4jDB:
+
     def __init__(
         self,
         embed_model: Embeddings,
@@ -18,51 +19,73 @@ class Neo4jDB:
         self.password: str = password
 
         self.embed_model: Embeddings = embed_model
-        self.graph = self.get_db()
+        self.graph: Graph = self.get_db()
 
     def get_db(self) -> Graph:
         """获取Neo4j数据库连接"""
         return Graph(self.bolt_url, auth=(self.username, self.password))
 
-    def create_node(self, label, context, **properties) -> Node:
+    def create_node(
+        self,
+        label: str,
+        name: str,
+        content: str,
+        context: str,
+        **properties: dict[str, object]
+    ):
         """
         创建或合并一个节点.
 
-        :param label: 节点标签
+        :param label: 节点类别
+        :param content: 节点内容
         :param context: 节点上下文
         :param properties: 节点属性
         :return: 创建或合并的节点
         """
-        embed = self.get_node_embedding(label)
-        # TODO
-        node = Node(
-            label,
-            embed=embed,
-            context=context,
-            **properties,
-        )
+        embed: list[float] = self.get_node_embedding(content)
+
+        node = Node(label, name=name, context=context, embed=embed, **properties)
+
         self.graph.merge(node, label, "name")
-        return node
 
     def create_edge(
-        self, start_node: Node, end_node: Node, rel_type: str
+        self,
+        start_node_name: str,
+        end_node_name: str,
+        rel_type: str,
+        description: str = "",
     ) -> Relationship:
         """
         在两个节点之间创建一个边
         """
         embed = self.get_edge_embedding(rel_type)
-        rel = Relationship(start_node, rel_type, end_node, embed=embed)
-        self.graph.merge(rel)
+
+        start_node = self.get_node_by_name(start_node_name)
+        end_node = self.get_node_by_name(end_node_name)
+
+        rel = Relationship(
+            start_node,
+            rel_type,
+            end_node,
+            embed=embed,
+            description=description,
+        )
+        self.graph.create(rel)
         return rel
 
+    def get_node_by_name(self, name: str) -> Node | None:
+        """根据节点名称获取节点"""
+
+        return self.graph.nodes.match(name=name).first()
+
     # TODO合并好还是不合并好
-    def get_node_embedding(self, text) -> list[float]:
+    def get_node_embedding(self, text: str) -> list[float]:
         """
         获取节点的嵌入向量
         """
         return self.embed_model.embed_query(text)
 
-    def get_edge_embedding(self, text) -> list[float]:
+    def get_edge_embedding(self, text: str) -> list[float]:
         """
         获取边的嵌入向量
         """
@@ -80,13 +103,21 @@ if __name__ == "__main__":
 
     embed_mode = OllamaClient().get_embed_model()
     db = Neo4jDB(embed_mode)
-    node1 = db.create_node("人", name="张三")
-    node2 = db.create_node("人", name="李四")
-    edge = db.create_edge(node1, node2, "同学")
+    node1 = db.create_node(
+        label="人", name="张三", content="张三", context="张三是一个程序员"
+    )
+    node2 = db.create_node(
+        label="人", name="李四", content="李四", context="李四是一个设计师"
+    )
+    edge = db.create_edge("张三", "李四", "同学")
 
-    node3 = db.create_node("人", name="王五")
-    edge2 = db.create_edge(node1, node3, "朋友")
+    node3 = db.create_node(
+        label="人", name="王五", content="王五", context="王五是一个产品经理"
+    )
+    edge2 = db.create_edge("张三", "王五", "朋友")
 
-    node4 = db.create_node("地点", name="北京")
-    edge3 = db.create_edge(node1, node4, "居住地")
+    node4 = db.create_node(
+        label="地点", name="北京", content="北京", context="北京是中国的首都"
+    )
+    edge3 = db.create_edge("张三", "北京", "居住地")
     print("Neo4j数据库已初始化")

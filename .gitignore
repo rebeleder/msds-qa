@@ -4,3 +4,4 @@ __pycache__
 kb
 .env
 scripts/no_msds_chemicals.txt
+neo4j

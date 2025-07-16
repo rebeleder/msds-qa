@@ -1,5 +1,6 @@
 import asyncio
 import html
+import itertools
 import re
 from collections import defaultdict
 
@@ -12,10 +13,8 @@ from src.model import OllamaClient, SiliconflowClient
 from src.parser import MsdsParser
 from src.prompt import Prompt
 
-import itertools
 
-
-def is_float_regex(value):
+def is_float_regex(value: str):
     return bool(re.match(r"^[-+]?[0-9]*\.?[0-9]+$", value))
 
 
@@ -26,7 +25,7 @@ chat_model = client.get_chat_model()
 embed_model = client.get_embed_model()
 
 
-def clean_str(input) -> str:
+def clean_str(input: str) -> str:
     """Clean an input string by removing HTML escapes, control characters, and other unwanted characters."""
     if not isinstance(input, str):
         return input
@@ -87,7 +86,7 @@ class Msds2GraphDB:
         db: Neo4jDB = Neo4jDB(embed_model),
     ) -> None:
         self.files: list[str] = files if isinstance(files, list) else [files]
-        self.parser: MsdsParser = MsdsParser
+        self.parser = MsdsParser
         self.documents = self.get_documents()
         self.db: Neo4jDB = db
         self.embed_model: Embeddings = self.db.embed_model
@@ -99,7 +98,7 @@ class Msds2GraphDB:
         documents = self.parser(self.files).invoke()
         return documents
 
-    def _get_hint_prompt(self, input_text) -> str:
+    def _get_hint_prompt(self, input_text: str) -> str:
         prompt = Prompt.get_prompt("entity_extraction").format(
             tuple_delimiter=Prompt.get_default_tuple_delimiter(),
             record_delimiter=Prompt.get_default_record_delimiter(),
@@ -139,7 +138,7 @@ class Msds2GraphDB:
 
             if_loop_result = await chat_model.ainvoke(memory_view)
 
-            if_loop_result = if_loop_result.strip().strip('"').strip("'").lower()
+            if_loop_result: bool = if_loop_result.strip().strip('"').strip("'").lower()
             if if_loop_result != "yes":
                 break
 

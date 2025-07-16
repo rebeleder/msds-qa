@@ -1,4 +1,5 @@
 from langchain_core.messages.base import BaseMessage
+from langchain_core.tools.simple import Tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import MessagesState, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -12,7 +13,7 @@ chat_model = SiliconflowClient().get_chat_model()
 embed_model = OllamaClient().get_embed_model()
 
 
-def get_graph(tools: list) -> CompiledStateGraph:
+def get_graph(tools: list[Tool]) -> CompiledStateGraph:
     llm_with_tool = chat_model.bind_tools(tools)
 
     def call_model(state) -> dict[str, BaseMessage]:

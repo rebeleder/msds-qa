@@ -3,4 +3,5 @@
         "PYTHONPATH": "${workspaceFolder}"
     },
     "debugpy.debugJustMyCode": false,
+    "python.analysis.typeCheckingMode": "strict",
 }

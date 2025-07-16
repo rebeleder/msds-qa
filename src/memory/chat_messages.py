@@ -7,9 +7,9 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 class ChatMessages(ChatMessageHistory):
     def __init__(self) -> None:
         super().__init__()
-        # self.messages = []
+        self.messages: list[BaseMessage]
 
-    def __getitem__(self, idx) -> BaseMessage:
+    def __getitem__(self, idx: int | slice) -> BaseMessage | list[BaseMessage]:
         return self.messages[idx]
 
     def __iter__(self) -> Iterator[BaseMessage]:

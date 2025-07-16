@@ -38,7 +38,7 @@ def test_it(func):  #
     return wrapper
 
 
-def check_db_exists(func):
+def check_db_exists(func: callable):
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -50,11 +50,8 @@ def check_db_exists(func):
 
 
 def parallel_map(
-    func: callable,
-    container: list,
-    max_workers=10,
-    enable_tqdm: bool = False,
-) -> list:
+    func: callable, container: list, max_workers=10, enable_tqdm: bool = False
+):
     """
     并行映射函数，使用线程池执行函数
 
