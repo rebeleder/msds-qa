@@ -5,11 +5,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
 
 from src.db import FaissDB
-from src.model import OllamaClient, SiliconflowClient
 from src.parser import MsdsParser
-
-client = OllamaClient()
-# client = SiliconflowClient()
 
 
 class Msds2DB:
@@ -17,8 +13,8 @@ class Msds2DB:
     def __init__(
         self,
         files: list[str] | str,
+        embed_model: Embeddings,
         db_path: str = "/root/Documents/msds-qa/kb",
-        embed_model: Embeddings = client.get_embed_model(),
     ) -> None:
         self.files: list[str] = files if isinstance(files, list) else [files]
         self.parser = MsdsParser
@@ -45,7 +41,10 @@ class Msds2DB:
 
 
 if __name__ == "__main__":
+    from src.model import GeminiClient, OllamaClient, SiliconflowClient
     from src.toolkits import get_files_from_kb_space
 
+    client = GeminiClient()
+
     kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:5]
-    msds2db = Msds2DB(files=kb_files)
+    msds2db = Msds2DB(files=kb_files, embed_model=client.get_embed_model())

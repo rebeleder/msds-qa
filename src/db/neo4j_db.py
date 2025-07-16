@@ -65,16 +65,18 @@ class Neo4jDB:
         start_node = self.get_node_by_name(start_node_name)
         end_node = self.get_node_by_name(end_node_name)
 
-        # ! 判断节点是否存在
-        rel = Relationship(
-            start_node,
-            rel_type,
-            end_node,
-            embed=embed,
-            description=description,
-        )
-        self.graph.merge(rel)
-        return rel
+        try:
+            # ! 判断节点是否存在
+            rel = Relationship(
+                start_node,
+                rel_type,
+                end_node,
+                embed=embed,
+                description=description,
+            )
+            self.graph.merge(rel)
+        except Exception as e:
+            print(f"Error creating edge: {e}")
 
     def get_node_by_name(self, name: str) -> Node | None:
         """根据节点名称获取节点"""
@@ -122,14 +124,29 @@ class Neo4jDB:
 
         top_nodes = top_nodes.flatten().tolist()[:limit]
 
-        chunks = [
-            Document(page_content=rel["description"])
-            for node in top_nodes
-            for rel in self.graph.relationships.match((node, None))
-        ]
+        # chunks = [
+        #     Document(page_content=rel["description"])
+        #     for node in top_nodes
+        #     for rel in self.graph.relationships.match((node, None))
+        # ]
+        chunks = []
+        for node in top_nodes:
+            if node["context"] is None:
+                continue
+            chunks.append(Document(page_content=node["context"]))
+
+            rels = list(self.graph.relationships.match(nodes=(node, None)))
+            for rel in rels:
+                _start_node = rel.start_node
+                _end_node = rel.end_node
+
+                chunks.append(
+                    Document(
+                        page_content=f"关系: {_start_node['name']} -> {rel.__class__.__name__}, 描述: {_end_node['context']}"
+                    )
+                )
 
         return chunks
-
 
 if __name__ == "__main__":
     from src.model import OllamaClient

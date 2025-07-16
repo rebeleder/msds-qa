@@ -1,6 +1,9 @@
 from langchain.tools.retriever import create_retriever_tool
-from langchain_core.tools.simple import Tool
+from langchain_core.tools import BaseTool, Tool
 from langchain_core.vectorstores import VectorStore
+
+from src.db import Neo4jDB
+from src.retriever import Neo4jRetriever
 
 
 class ToolSet:
@@ -8,7 +11,7 @@ class ToolSet:
         pass
 
     @staticmethod
-    def get_retriever_tool(
+    def get_faiss_retriever_tool(
         db: VectorStore,
         name: str,
         description: str,
@@ -24,3 +27,12 @@ class ToolSet:
             description=description,
         )
         return retriever
+
+    @staticmethod
+    def get_neo4j_retriever_tool(
+        db: Neo4jDB,
+        name: str = "neo4j_retriever",
+        description: str = "用于从Neo4j数据库中检索信息的工具",
+    ) -> BaseTool:
+        """创建一个Neo4j检索工具"""
+        return Neo4jRetriever(db=db, name=name, description=description)

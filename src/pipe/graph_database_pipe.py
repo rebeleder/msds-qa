@@ -3,26 +3,19 @@ import html
 import itertools
 import re
 from collections import defaultdict
-
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.schema import Document
 from langchain_core.embeddings import Embeddings
 
 from src.db import Neo4jDB
 from src.memory import ChatMessages
-from src.model import OllamaClient, SiliconflowClient
+
 from src.parser import MsdsParser
 from src.prompt import Prompt
 
 
 def is_float_regex(value: str):
     return bool(re.match(r"^[-+]?[0-9]*\.?[0-9]+$", value))
-
-
-client = SiliconflowClient()
-
-
-chat_model = client.get_chat_model()
-embed_model = client.get_embed_model()
 
 
 def clean_str(input: str) -> str:
@@ -79,16 +72,21 @@ class Msds2GraphDB:
     def __init__(
         self,
         files: list[str] | str,
-        db: Neo4jDB = Neo4jDB(embed_model),
+        chat_model: BaseChatModel,
+        graph: Neo4jDB,
     ) -> None:
         self.files: list[str] = files if isinstance(files, list) else [files]
         self.parser = MsdsParser
+
+        self.chat_model = chat_model
         self.documents = self.get_documents()
-        self.db: Neo4jDB = db
-        self.embed_model: Embeddings = self.db.embed_model
+        self.graph: Neo4jDB = graph
 
         self.continue_prompt = self._get_continue_prompt()
         self.if_loop_prompt = self._get_if_loop_prompt()
+
+    def get_db(self) -> Neo4jDB:
+        return self.graph
 
     def get_documents(self) -> list[Document]:
         documents = self.parser(self.files).invoke()
@@ -171,10 +169,12 @@ class Msds2GraphDB:
 
         return dict(maybe_nodes), dict(maybe_edges)
 
-    async def __call__(self, chunks: list[str] | str):
-        chunks = chunks if isinstance(chunks, list) else [chunks]
+    async def invoke(self):
+        contents = [doc.page_content for doc in self.documents][:10]
 
-        results = await asyncio.gather(*[self.parse_single_document(c) for c in chunks])
+        results = await asyncio.gather(
+            *[self.parse_single_document(c) for c in contents]
+        )
         maybe_nodes = defaultdict(list)
         maybe_edges = defaultdict(list)
         for m_nodes, m_edges in results:
@@ -187,7 +187,7 @@ class Msds2GraphDB:
         maybe_edges = list(itertools.chain.from_iterable(maybe_edges.values()))
 
         for node in maybe_nodes:
-            self.db.create_node(
+            self.graph.create_node(
                 label=node["entity_type"],
                 name=node["entity_label"],
                 content=node["context"],
@@ -195,32 +195,30 @@ class Msds2GraphDB:
             )
 
         for edge in maybe_edges:
-            self.db.create_edge(
+            self.graph.create_edge(
                 start_node_name=edge["start_node_name"],
                 end_node_name=edge["end_node_name"],
                 rel_type=edge["keywords"],
             )
-        return maybe_nodes, maybe_edges
-
-
-async def main():
-    from src.config import hp
-    from src.toolkits import get_files_from_kb_space
-
-    files = get_files_from_kb_space(hp.knowledge_file_path)[:5]
-
-    pipe = Msds2GraphDB(files)
-    await pipe(
-        "小王是一个程序员，他的工作是编写代码。他喜欢吃苹果和香蕉, 小李是一个设计师，他喜欢画画和摄影, 小张是一个医生，他喜欢看书和旅游。小王和小李是好朋友，他们经常一起出去玩。小张和小王是同事，他们在同一家公司工作。"
-    )
 
 
 if __name__ == "__main__":
-    import asyncio
-
     from src.config import hp
     from src.toolkits import get_files_from_kb_space
+    from src.model import OllamaClient, SiliconflowClient, GeminiClient
+
+    client = SiliconflowClient()
+
+    chat_model = client.get_chat_model()
+    embed_model = client.get_embed_model()
 
     files = get_files_from_kb_space(hp.knowledge_file_path)[:5]
 
-    asyncio.run(main())
+    async def main():
+        graph = Neo4jDB(embed_model=embed_model)
+        graph = await Msds2GraphDB(
+            files=files, chat_model=chat_model, graph=graph
+        ).invoke()
+        return graph
+
+    graph = asyncio.run(main())
