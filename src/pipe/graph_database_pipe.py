@@ -12,6 +12,7 @@ from src.memory import ChatMessages
 from src.model import OllamaClient, SiliconflowClient
 from src.parser import MsdsParser
 from src.prompt import Prompt
+from src.toolkits import parallel_map
 
 
 def is_float_regex(value: str):
@@ -36,18 +37,14 @@ def clean_str(input: str) -> str:
 
 
 async def _handle_single_entity_extraction(record_attributes: list[str]):
-    if len(record_attributes) < 4 or record_attributes[0] != '"entity"':
+    if len(record_attributes) < 4 or record_attributes[0] != "entity":
         return None
-    entity_name = clean_str(record_attributes[1].upper())
-    if not entity_name.strip():
+    entity_label = clean_str(record_attributes[1].upper())
+    if not entity_label.strip():
         return None
     entity_type = clean_str(record_attributes[2].upper())
-    entity_description = clean_str(record_attributes[3])
-    return dict(
-        entity_name=entity_name,
-        entity_type=entity_type,
-        description=entity_description,
-    )
+    context = clean_str(record_attributes[3])
+    return dict(entity_label=entity_label, entity_type=entity_type, context=context)
 
 
 def split_string_by_multi_markers(content: str, markers: list[str]) -> list[str]:
@@ -58,11 +55,11 @@ def split_string_by_multi_markers(content: str, markers: list[str]) -> list[str]
 
 
 async def _handle_single_relationship_extraction(record_attributes: list[str]):
-    if len(record_attributes) < 5 or record_attributes[0] != '"relationship"':
+    if len(record_attributes) < 5 or record_attributes[0] != "relationship":
         return None
     # add this record as edge
-    source = clean_str(record_attributes[1].upper())
-    target = clean_str(record_attributes[2].upper())
+    start_node_name = clean_str(record_attributes[1].upper())
+    end_node_name = clean_str(record_attributes[2].upper())
     edge_description = clean_str(record_attributes[3])
 
     edge_keywords = clean_str(record_attributes[4])
@@ -70,8 +67,8 @@ async def _handle_single_relationship_extraction(record_attributes: list[str]):
         float(record_attributes[-1]) if is_float_regex(record_attributes[-1]) else 1.0
     )
     return dict(
-        src_id=source,
-        tgt_id=target,
+        start_node_name=start_node_name,
+        end_node_name=end_node_name,
         weight=weight,
         description=edge_description,
         keywords=edge_keywords,
@@ -163,15 +160,15 @@ class Msds2GraphDB:
             )
             if_entities = await _handle_single_entity_extraction(record_attributes)
             if if_entities is not None:
-                maybe_nodes[if_entities["entity_name"]].append(if_entities)
+                maybe_nodes[if_entities["entity_label"]].append(if_entities)
                 continue
             if_relation = await _handle_single_relationship_extraction(
                 record_attributes
             )
             if if_relation is not None:
-                maybe_edges[(if_relation["src_id"], if_relation["tgt_id"])].append(
-                    if_relation
-                )
+                maybe_edges[
+                    (if_relation["start_node_name"], if_relation["start_node_name"])
+                ].append(if_relation)
 
         return dict(maybe_nodes), dict(maybe_edges)
 
@@ -192,16 +189,16 @@ class Msds2GraphDB:
 
         for node in maybe_nodes:
             self.db.create_node(
-                category=node["entity_type"],
-                content=node["entity_name"],
-                context=node["description"],  # TODO需要支持context
-                description=node["entity_name"],
+                label=node["entity_type"],
+                name=node["entity_label"],
+                content=node["context"],
+                context=node["context"],
             )
 
         for edge in maybe_edges:
             self.db.create_edge(
-                start_node_name=edge["src_id"],
-                end_node_name=edge["tgt_id"],
+                start_node_name=edge["start_node_name"],
+                end_node_name=edge["end_node_name"],
                 rel_type=edge["keywords"],
             )
         return maybe_nodes, maybe_edges

@@ -1,7 +1,10 @@
+import numpy as np
+from langchain.schema import Document
 from langchain_core.embeddings import Embeddings
 from py2neo import Graph, Node, Relationship
 
 from src.config import hp
+from src.toolkits import parallel_map
 
 
 class Neo4jDB:
@@ -18,10 +21,9 @@ class Neo4jDB:
         self.username: str = username
         self.password: str = password
 
-        self.embed_model: Embeddings = embed_model
-        self.graph: Graph = self.get_db()
+        self.graph: Graph = self.get_graph()
 
-    def get_db(self) -> Graph:
+    def get_graph(self) -> Graph:
         """获取Neo4j数据库连接"""
         return Graph(self.bolt_url, auth=(self.username, self.password))
 
@@ -63,6 +65,7 @@ class Neo4jDB:
         start_node = self.get_node_by_name(start_node_name)
         end_node = self.get_node_by_name(end_node_name)
 
+        # ! 判断节点是否存在
         rel = Relationship(
             start_node,
             rel_type,
@@ -85,6 +88,14 @@ class Neo4jDB:
         """
         return self.embed_model.embed_query(text)
 
+    def get_nodes_embedding(self, nodes: list[Node]) -> np.ndarray:
+        embeds = [node["embed"] for node in nodes]
+        return np.array(embeds)
+
+    def get_edges_embedding(self, edges: list[Relationship]) -> np.ndarray:
+        embeds = [rel["embed"] for rel in edges]
+        return np.array(embeds)
+
     def get_edge_embedding(self, text: str) -> list[float]:
         """
         获取边的嵌入向量
@@ -96,6 +107,31 @@ class Neo4jDB:
         删除整个图数据库
         """
         self.graph.delete_all()
+
+    # ! 当前阶段仅支持单文本,少量向量检索
+    def get_relevant_nodes(self, query: str | list[str], limit: int = 10) -> list[Node]:
+        query = query if isinstance(query, list) else [query]
+        query_embedding = self.embed_model.embed_documents(query)
+        nodes = list(self.graph.nodes.match())
+        embeds = self.get_nodes_embedding(nodes)
+
+        cosine = query_embedding @ embeds.T
+        top_indices = np.argsort(cosine, axis=1)[:, -limit:][:, ::-1]
+        top_nodes = np.array(nodes)[top_indices]
+
+        top_nodes = top_nodes.flatten().tolist()
+        return top_nodes[:limit]  # 返回前limit个相关节点
+
+    def get_relevant_chunks(
+        self, query: str | list[str], limit: int = 10
+    ) -> list[Document]:
+        """
+        获取与查询相关的节点
+        """
+        return parallel_map(
+            lambda x: Document(page_content=x["context"]),
+            self.get_relevant_nodes(query, limit),
+        )
 
 
 if __name__ == "__main__":
@@ -120,4 +156,5 @@ if __name__ == "__main__":
         label="地点", name="北京", content="北京", context="北京是中国的首都"
     )
     edge3 = db.create_edge("张三", "北京", "居住地")
-    print("Neo4j数据库已初始化")
+
+    print(db.get_relevant_chunks("张三", limit=4))

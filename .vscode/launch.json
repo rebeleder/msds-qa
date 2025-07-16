@@ -21,6 +21,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/pipe/graph_database_pipe.py",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "debug_neo4j_db",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/db/neo4j_db.py",
+            "console": "integratedTerminal"
+                }
     ]
 }
