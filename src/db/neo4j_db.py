@@ -4,7 +4,6 @@ from langchain_core.embeddings import Embeddings
 from py2neo import Graph, Node, Relationship
 
 from src.config import hp
-from src.toolkits import parallel_map
 
 
 class Neo4jDB:
@@ -33,8 +32,8 @@ class Neo4jDB:
         name: str,
         content: str,
         context: str,
-        **properties: dict[str, object]
-    ):
+        **properties: dict[str, object],
+    ) -> Node:
         """
         创建或合并一个节点.
 
@@ -49,6 +48,7 @@ class Neo4jDB:
         node = Node(label, name=name, context=context, embed=embed, **properties)
 
         self.graph.merge(node, label, "name")
+        return node
 
     def create_edge(
         self,
@@ -73,7 +73,7 @@ class Neo4jDB:
             embed=embed,
             description=description,
         )
-        self.graph.create(rel)
+        self.graph.merge(rel)
         return rel
 
     def get_node_by_name(self, name: str) -> Node | None:
@@ -81,7 +81,6 @@ class Neo4jDB:
 
         return self.graph.nodes.match(name=name).first()
 
-    # TODO合并好还是不合并好
     def get_node_embedding(self, text: str) -> list[float]:
         """
         获取节点的嵌入向量
@@ -109,7 +108,9 @@ class Neo4jDB:
         self.graph.delete_all()
 
     # ! 当前阶段仅支持单文本,少量向量检索
-    def get_relevant_nodes(self, query: str | list[str], limit: int = 10) -> list[Node]:
+    def get_relevant_chunks(
+        self, query: str | list[str], limit: int = 10
+    ) -> list[Document]:
         query = query if isinstance(query, list) else [query]
         query_embedding = self.embed_model.embed_documents(query)
         nodes = list(self.graph.nodes.match())
@@ -119,19 +120,15 @@ class Neo4jDB:
         top_indices = np.argsort(cosine, axis=1)[:, -limit:][:, ::-1]
         top_nodes = np.array(nodes)[top_indices]
 
-        top_nodes = top_nodes.flatten().tolist()
-        return top_nodes[:limit]  # 返回前limit个相关节点
+        top_nodes = top_nodes.flatten().tolist()[:limit]
 
-    def get_relevant_chunks(
-        self, query: str | list[str], limit: int = 10
-    ) -> list[Document]:
-        """
-        获取与查询相关的节点
-        """
-        return parallel_map(
-            lambda x: Document(page_content=x["context"]),
-            self.get_relevant_nodes(query, limit),
-        )
+        chunks = [
+            Document(page_content=rel["description"])
+            for node in top_nodes
+            for rel in self.graph.relationships.match((node, None))
+        ]
+
+        return chunks
 
 
 if __name__ == "__main__":
@@ -140,21 +137,21 @@ if __name__ == "__main__":
     embed_mode = OllamaClient().get_embed_model()
     db = Neo4jDB(embed_mode)
     node1 = db.create_node(
-        label="人", name="张三", content="张三", context="张三是一个程序员"
+        label="PERSON", name="张三", content="张三", context="张三是一个程序员"
     )
     node2 = db.create_node(
-        label="人", name="李四", content="李四", context="李四是一个设计师"
+        label="PERSON", name="李四", content="李四", context="李四是一个设计师"
     )
-    edge = db.create_edge("张三", "李四", "同学")
+    edge = db.create_edge("张三", "李四", "同学", "张三和李四是同学关系")
 
     node3 = db.create_node(
-        label="人", name="王五", content="王五", context="王五是一个产品经理"
+        label="PERSON", name="王五", content="王五", context="王五是一个产品经理"
     )
-    edge2 = db.create_edge("张三", "王五", "朋友")
+    edge2 = db.create_edge("张三", "王五", "朋友", "张三和王五是朋友关系")
 
     node4 = db.create_node(
-        label="地点", name="北京", content="北京", context="北京是中国的首都"
+        label="POSITION", name="北京", content="北京", context="北京是中国的首都"
     )
-    edge3 = db.create_edge("张三", "北京", "居住地")
+    edge3 = db.create_edge("张三", "北京", "居住地", "张三居住在北京")
 
-    print(db.get_relevant_chunks("张三", limit=4))
+    print(db.get_relevant_chunks("张三"))

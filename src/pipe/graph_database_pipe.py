@@ -12,7 +12,6 @@ from src.memory import ChatMessages
 from src.model import OllamaClient, SiliconflowClient
 from src.parser import MsdsParser
 from src.prompt import Prompt
-from src.toolkits import parallel_map
 
 
 def is_float_regex(value: str):
