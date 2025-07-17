@@ -1,10 +1,13 @@
+import json
 import logging
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
+from typing import Callable
 
+from json_repair import json_repair
 from tqdm import tqdm
-
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,7 +41,7 @@ def test_it(func):  #
     return wrapper
 
 
-def check_db_exists(func: callable):
+def check_db_exists(func: Callable):
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -50,7 +53,7 @@ def check_db_exists(func: callable):
 
 
 def parallel_map(
-    func: callable, container: list, max_workers=10, enable_tqdm: bool = False
+    func: Callable, container: list, max_workers=10, enable_tqdm: bool = False
 ):
     """
     并行映射函数，使用线程池执行函数
@@ -102,8 +105,26 @@ def get_files_from_kb_space(kb_path: str) -> list[str]:
     return files
 
 
-def convert_to_openai_messages(*args: str) -> list[dict[str, str]]:
-    roles = ["user", "assistant"]
-    return [
-        {"role": roles[i % 2], "content": content} for i, content in enumerate(args)
-    ]
+def get_json_from_str(text: str) -> dict | None:
+    """
+    从字符串中提取JSON数据
+
+    :param text: 包含JSON数据的字符串。
+    :return: 解析后的JSON对象（字典），如果解析失败则返回None。
+    """
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return None
+
+    json_str = match.group(0)
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        try:
+            repaired_json = json_repair.loads(json_str)
+            return repaired_json if isinstance(repaired_json, dict) else None
+        except Exception as E:
+            logging.error(f"Failed to repair JSON: {E}")
+            return None
+
+

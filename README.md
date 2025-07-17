@@ -2,8 +2,10 @@
 
 ## msds知识问答系统
 
-!['graph'](./imgs/demo1.png)
-!['graph'](./imgs/demo2.png)
+![graph](./imgs/demo1.png)
+![graph](./imgs/demo2.png)
+![graph](./imgs/demo3.png)
+
 
 Q：从知识库中查询氢化钙会造成哪些健康危害
 

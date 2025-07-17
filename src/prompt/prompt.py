@@ -2,20 +2,20 @@ from src.prompt import (
     EntityContinueExtraction,
     EntityExtractionPrompt,
     EntityIfLoopExtraction,
+    KeywordsExtraction,
 )
-
-desc2prompt = {
-    "entity_extraction": EntityExtractionPrompt,
-    "entity_continue_extraction": EntityContinueExtraction,
-    "entity_if_loop_extraction": EntityIfLoopExtraction,
-    # "graph_field_sep": Prompt.get_graph_field_sep(),
-}
 
 
 class Prompt:
     @staticmethod
     def get_prompt(desc: str) -> str:
-        return desc2prompt[desc]
+        return {
+            "entity_extraction": EntityExtractionPrompt,
+            "entity_continue_extraction": EntityContinueExtraction,
+            "entity_if_loop_extraction": EntityIfLoopExtraction,
+            "keywords_extraction": KeywordsExtraction,
+            # "graph_field_sep": Prompt.get_graph_field_sep(),
+        }[desc]
 
     @staticmethod
     def get_graph_field_sep() -> str:

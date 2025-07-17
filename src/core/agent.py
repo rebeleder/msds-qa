@@ -36,7 +36,7 @@ if __name__ == "__main__":
     client = SiliconflowClient()
     chat_model = client.get_chat_model()
     embed_model = client.get_embed_model()
-    db = Neo4jDB(embed_model=embed_model)
+    db = Neo4jDB(chat_model=chat_model, embed_model=embed_model)
     tools = [
         ToolSet.get_neo4j_retriever_tool(
             db=db,
@@ -56,7 +56,7 @@ if __name__ == "__main__":
                 },
                 {
                     "role": "human",
-                    "content": "从知识库中查询氢化钙会造成哪些健康危害",
+                    "content": "从知识库中查询：氢化钙泄漏会造成哪些健康危害",
                 },
             ]
         },

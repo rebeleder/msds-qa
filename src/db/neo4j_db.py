@@ -1,20 +1,27 @@
 import numpy as np
 from langchain.schema import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.language_models.chat_models import BaseChatModel
 from py2neo import Graph, Node, Relationship
+from ratelimit import limits, sleep_and_retry
+from sklearn.metrics.pairwise import cosine_similarity
 
 from src.config import hp
+from src.prompt import Prompt
+from src.toolkits import get_json_from_str
 
 
 class Neo4jDB:
 
     def __init__(
         self,
+        chat_model: BaseChatModel,
         embed_model: Embeddings,
         bolt_url: str = hp.neo4j_bolt_url,
         username: str = hp.neo4j_username,
         password: str = hp.neo4j_password,
     ) -> None:
+        self.chat_model: BaseChatModel = chat_model
         self.embed_model: Embeddings = embed_model
         self.bolt_url: str = bolt_url
         self.username: str = username
@@ -56,7 +63,7 @@ class Neo4jDB:
         end_node_name: str,
         rel_type: str,
         description: str = "",
-    ) -> Relationship:
+    ) -> None:
         """
         在两个节点之间创建一个边
         """
@@ -83,6 +90,8 @@ class Neo4jDB:
 
         return self.graph.nodes.match(name=name).first()
 
+    @sleep_and_retry
+    @limits(calls=20, period=1)
     def get_node_embedding(self, text: str) -> list[float]:
         """
         获取节点的嵌入向量
@@ -109,16 +118,84 @@ class Neo4jDB:
         """
         self.graph.delete_all()
 
-    # ! 当前阶段仅支持单文本,少量向量检索
-    def get_relevant_chunks(
-        self, query: str | list[str], limit: int = 10
-    ) -> list[Document]:
-        query = query if isinstance(query, list) else [query]
-        query_embedding = self.embed_model.embed_documents(query)
+    def get_high_low_keywords(self, query: str) -> list[str]:
+        """获取语句中的关键词"""
+        prompt = Prompt.get_prompt("keywords_extraction")
+        response = self.chat_model.invoke(prompt.format(query=query)).content
+
+        high_low_keywords = get_json_from_str(str(response))
+
+        if isinstance(high_low_keywords, dict):
+            high_level_keywords = high_low_keywords["high_level_keywords"]
+            low_level_keywords = high_low_keywords["low_level_keywords"]
+
+            return list(set(high_level_keywords + low_level_keywords + [query]))
+
+        else:
+            return [query]
+
+    async def aget_high_low_keywords(self, query: str) -> list[str]:
+        """获取语句中的关键词"""
+        prompt = Prompt.get_prompt("keywords_extraction")
+        response = await self.chat_model.ainvoke(prompt.format(query=query))
+        response = response.content
+
+        high_low_keywords = get_json_from_str(str(response))
+
+        if isinstance(high_low_keywords, dict):
+            high_level_keywords = high_low_keywords["high_level_keywords"]
+            low_level_keywords = high_low_keywords["low_level_keywords"]
+
+            return list(set(high_level_keywords + low_level_keywords + [query]))
+
+        else:
+            return [query]
+
+    def get_relevant_chunks(self, query: str, limit: int = 10) -> list[Document]:
+
+        keywords = self.get_high_low_keywords(query=query)
+
+        query_embedding = self.embed_model.embed_documents(keywords)
         nodes = list(self.graph.nodes.match())
+        # TODO 非一次性读取
         embeds = self.get_nodes_embedding(nodes)
 
-        cosine = query_embedding @ embeds.T
+        cosine = cosine_similarity(query_embedding, embeds)
+        top_indices = np.argsort(cosine, axis=1)[:, -limit:][:, ::-1]
+        top_nodes = np.array(nodes)[top_indices]
+
+        top_nodes = top_nodes.flatten().tolist()[:limit]
+
+        chunks = []
+        for node in top_nodes:
+            if node["context"] is None:
+                continue
+            chunks.append(Document(page_content=node["context"]))
+
+            rels = list(self.graph.relationships.match(nodes=(node, None)))
+            for rel in rels:
+                _start_node = rel.start_node
+                _end_node = rel.end_node
+
+                chunks.append(
+                    Document(
+                        page_content=f"关系: {_start_node['name']} -> {rel.__class__.__name__}, 描述: {_end_node['context']}"
+                    )
+                )
+
+        return chunks
+
+    # ! 当前阶段仅支持单文本,少量向量检索
+    async def aget_relevant_chunks(self, query: str, limit: int = 10) -> list[Document]:
+
+        keywords = await self.aget_high_low_keywords(query=query)
+
+        query_embedding = await self.embed_model.aembed_documents(keywords)
+        nodes = list(self.graph.nodes.match())
+        # TODO 非一次性读取
+        embeds = self.get_nodes_embedding(nodes)
+
+        cosine = cosine_similarity(query_embedding, embeds)
         top_indices = np.argsort(cosine, axis=1)[:, -limit:][:, ::-1]
         top_nodes = np.array(nodes)[top_indices]
 
@@ -148,27 +225,47 @@ class Neo4jDB:
 
         return chunks
 
+
 if __name__ == "__main__":
-    from src.model import OllamaClient
+    import asyncio
 
-    embed_mode = OllamaClient().get_embed_model()
-    db = Neo4jDB(embed_mode)
-    node1 = db.create_node(
-        label="PERSON", name="张三", content="张三", context="张三是一个程序员"
-    )
-    node2 = db.create_node(
-        label="PERSON", name="李四", content="李四", context="李四是一个设计师"
-    )
-    edge = db.create_edge("张三", "李四", "同学", "张三和李四是同学关系")
+    from src.model import SiliconflowClient
 
-    node3 = db.create_node(
-        label="PERSON", name="王五", content="王五", context="王五是一个产品经理"
-    )
-    edge2 = db.create_edge("张三", "王五", "朋友", "张三和王五是朋友关系")
+    chat_model = SiliconflowClient().get_chat_model()
+    embed_model = SiliconflowClient().get_embed_model()
+    db = Neo4jDB(chat_model, embed_model)
 
-    node4 = db.create_node(
-        label="POSITION", name="北京", content="北京", context="北京是中国的首都"
-    )
+    # node1 = db.create_node(
+    #     label="PERSON",
+    #     name="张三",
+    #     content="张三",
+    #     context="张三是一个程序员",
+    # )
+    # node2 = db.create_node(
+    #     label="PERSON",
+    #     name="李四",
+    #     content="李四",
+    #     context="李四是一个设计师",
+    # )
+    # edge = db.create_edge("张三", "李四", "同学", "张三和李四是同学关系")
+
+    # node3 = db.create_node(
+    #     label="PERSON",
+    #     name="王五",
+    #     content="王五",
+    #     context="王五是一个产品经理",
+    # )
+    # edge2 = db.create_edge("张三", "王五", "朋友", "张三和王五是朋友关系")
+
+    # node4 = db.create_node(
+    #     label="POSITION",
+    #     name="北京",
+    #     content="北京",
+    #     context="北京是中国的首都",
+    # )
+
     edge3 = db.create_edge("张三", "北京", "居住地", "张三居住在北京")
+    async def main():
+        await db.aget_relevant_chunks("张三")
 
-    print(db.get_relevant_chunks("张三"))
+    asyncio.run(main())

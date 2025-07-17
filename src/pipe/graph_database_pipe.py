@@ -3,13 +3,13 @@ import html
 import itertools
 import re
 from collections import defaultdict
-from langchain_core.language_models.chat_models import BaseChatModel
+
 from langchain.schema import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.language_models.chat_models import BaseChatModel
 
 from src.db import Neo4jDB
 from src.memory import ChatMessages
-
 from src.parser import MsdsParser
 from src.prompt import Prompt
 
@@ -204,8 +204,8 @@ class Msds2GraphDB:
 
 if __name__ == "__main__":
     from src.config import hp
+    from src.model import GeminiClient, OllamaClient, SiliconflowClient
     from src.toolkits import get_files_from_kb_space
-    from src.model import OllamaClient, SiliconflowClient, GeminiClient
 
     client = SiliconflowClient()
 
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     files = get_files_from_kb_space(hp.knowledge_file_path)[:5]
 
     async def main():
-        graph = Neo4jDB(embed_model=embed_model)
+        graph = Neo4jDB(chat_model=chat_model, embed_model=embed_model)
         graph = await Msds2GraphDB(
             files=files, chat_model=chat_model, graph=graph
         ).invoke()

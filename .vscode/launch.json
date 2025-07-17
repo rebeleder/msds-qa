@@ -9,14 +9,14 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "msds_pipeline",
+            "name": "构建向量数据库",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/pipe/msds_pipe.py",
             "console": "integratedTerminal"
         },
         {
-            "name": "graph_database_pipe",
+            "name": "构建知识图谱（图数据库）",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/pipe/graph_database_pipe.py",
