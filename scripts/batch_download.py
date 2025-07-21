@@ -1,16 +1,16 @@
 import pandas as pd
 
 from src.toolkits import parallel_map
-from src.toolkits.chem_search_engine import chemicalsDataSearchEngine
+from src.toolkits.chem_search_engine import ChemicalsDataSearchEngine
 
 
-def download_msds_for_chem(chem_name: str, search_engine: chemicalsDataSearchEngine):
+def download_msds_for_chem(chem_name: str, search_engine: ChemicalsDataSearchEngine):
     search_engine.download_msds_by_name(chem_name)
 
 
 if __name__ == "__main__":
     df = pd.read_csv("/root/Documents/msds-qa/scripts/chem_table.csv")
-    search_engine = chemicalsDataSearchEngine()
+    search_engine = ChemicalsDataSearchEngine()
     parallel_map(
         lambda chem_name: download_msds_for_chem(chem_name, search_engine),
         df["危险品名称"],

@@ -1,3 +1,4 @@
+from .chem_search_engine import ChemicalsDataSearchEngine
 from .funcs import (
     check_db_exists,
     get_files_from_kb_space,

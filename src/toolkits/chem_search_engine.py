@@ -2,10 +2,10 @@ import os
 
 import requests
 
-from src.toolkits import parallel_map
+from .funcs import parallel_map
 
 
-class chemicalsDataSearchEngine:
+class ChemicalsDataSearchEngine:
     def __init__(self) -> None:
         # 国家危险化学品安全公共服务互联网平台
         self.home_url = "https://whpdj.mem.gov.cn"
@@ -79,7 +79,12 @@ class chemicalsDataSearchEngine:
         )
         json_object = response.json()
 
-        return [record["chemName"] for record in json_object["obj"]["records"]]
+        return parallel_map(
+            lambda record: record["chemName"],
+            json_object["obj"]["records"],
+            max_workers=10,
+            enable_tqdm=True,
+        )
 
     def get_chemInfo(self, idenDataId: str) -> dict:
         """
@@ -197,8 +202,56 @@ class chemicalsDataSearchEngine:
         self.download_msds_by_name(chemName)
 
 
+class ChemInfo:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    # """
+    # 化学品信息数据类
+    # """
+
+    # idenDataId: str
+    # chemName: str
+    # chemCas: str
+    # chemAlias: str  # 化学品名称
+    # chemEnglishName: str  # 英文名称
+    # appearanceShape: str  # 外观与性状
+    # ph: str  # pH值
+    # meltPoint: str  # 熔点
+    # boilPoint: str  # 沸点
+    # relativeDensity: str  # 相对密度
+    # relativeVaporDensity: str  # 相对蒸气密度
+    # vaporPressure: str  # 蒸气压
+    # combustionHeat: str  # 燃烧热
+    # limitTemp: str  # 临界温度
+    # limitPress: str  # 临界压力
+    # octMatModulus: str  # 辛醇-水分配系数
+    # flashPoint: str  # 闪点
+    # autoIgnitionTemp: str  # 自燃温度
+    # exploLowerLimit: str  # 爆炸下限
+    # exploUpperLimit: str  # 爆炸上限
+    # breakdownTemp: str  # 分解温度
+    # viscosity: str  # 粘度
+    # solubilty: str  # 溶解度
+    # density: str  # 密度
+    # specialDanger: str  # 燃烧与爆炸危险性
+    # physcialChemDanger: str  # 活性反应
+    # healthHazard: str  # 中毒表现
+    # careerContactLimit: str  # 职业接触限值
+    # environmentHazard: str  # 环境危害
+    # firstMeasure: str  # 急救措施
+    # leakageMeasure: str  # 泄漏应急措施
+    # adviceProjectExtinguish: str  # 灭火方法
+    # avoidMater: str  # 避免接触的物质
+    # acuteToxicity: str  # 毒性
+    # riskCategory: str  # 危险性类别
+    # riskDesc: str  # 危险性说明
+    # warnWord: str  # GHS警示词
+
+
 if __name__ == "__main__":
-    search_engine = chemicalsDataSearchEngine()
+    search_engine = ChemicalsDataSearchEngine()
     idenDataId = search_engine.test_get_idenDataId()
     chem_info = search_engine.get_chemInfo(idenDataId)
     file_info = search_engine.get_fileInfo(chem_info)
@@ -208,4 +261,4 @@ if __name__ == "__main__":
     print(f"化学品信息: {chem_info['chemName']}")
     print(f"安全文件名称: {file_info['safetyFileName']}")
     print(f"安全文件下载地址: {file_info['safetyFileUrl']}")
-    search_engine.download_all_msds()
+    # search_engine.download_all_msds()
