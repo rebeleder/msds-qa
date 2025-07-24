@@ -38,12 +38,12 @@ class ToolSet:
         return Neo4jRetriever(db=db, name=name, description=description)
 
     @staticmethod
-    def get_nrcc_chem_info_tool() -> ChemInfoRetriever:
+    def get_nrcc_chem_info_tool() -> BaseTool:
         """nrcc化学品信息检索工具"""
         return ChemInfoRetriever()
 
 
 if __name__ == "__main__":
-    search_tool: ChemInfoRetriever = ToolSet.get_nrcc_chem_info_tool()
+    search_tool: BaseTool = ToolSet.get_nrcc_chem_info_tool()
 
     print(search_tool.invoke({"chem_name": "甲苯"}))

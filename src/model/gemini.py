@@ -10,15 +10,13 @@ class GeminiClient:
         self.embed_model = self.get_embed_model()
 
     def get_chat_model(
-        self,
-        chat_model_name: str = hp.gemini_chat_model,
+        self, chat_model_name: str = hp.gemini_chat_model
     ) -> ChatGoogleGenerativeAI:
         chat_model = ChatGoogleGenerativeAI(model=chat_model_name)
         return chat_model
 
     def get_embed_model(
-        self,
-        embed_model_name: str = hp.gemini_embedding_model,
+        self, embed_model_name: str = hp.gemini_embedding_model
     ) -> GoogleGenerativeAIEmbeddings:
         embed_model = GoogleGenerativeAIEmbeddings(model=embed_model_name)
         return embed_model
