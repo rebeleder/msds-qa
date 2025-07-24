@@ -1,1 +1,2 @@
 from .neo4j_retriever import Neo4jRetriever
+from .nrcc_cheminfo_retriever import ChemInfoRetriever

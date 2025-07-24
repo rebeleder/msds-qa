@@ -3,7 +3,7 @@ from langchain_core.tools import BaseTool, Tool
 from langchain_core.vectorstores import VectorStore
 
 from src.db import Neo4jDB
-from src.retriever import Neo4jRetriever
+from src.retriever import ChemInfoRetriever, Neo4jRetriever
 
 
 class ToolSet:
@@ -36,3 +36,14 @@ class ToolSet:
     ) -> BaseTool:
         """创建一个Neo4j检索工具"""
         return Neo4jRetriever(db=db, name=name, description=description)
+
+    @staticmethod
+    def get_nrcc_chem_info_tool() -> ChemInfoRetriever:
+        """nrcc化学品信息检索工具"""
+        return ChemInfoRetriever()
+
+
+if __name__ == "__main__":
+    search_tool: ChemInfoRetriever = ToolSet.get_nrcc_chem_info_tool()
+
+    print(search_tool.invoke({"chem_name": "甲苯"}))

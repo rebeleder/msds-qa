@@ -1,6 +1,8 @@
 import os
+from typing import Union
 
 import requests
+from pydantic import BaseModel, Field
 
 from .funcs import parallel_map
 
@@ -26,7 +28,7 @@ class ChemicalsDataSearchEngine:
 
         self.no_msds_chemicals = []
 
-    def get_idenDataId(self, chemName: str) -> str:
+    def get_idenDataId(self, chemName: str) -> Union[str, None]:
         """
         精准匹配获取化学品的唯一标识符
 
@@ -202,52 +204,51 @@ class ChemicalsDataSearchEngine:
         self.download_msds_by_name(chemName)
 
 
-class ChemInfo:
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+class ChemInfoModel(BaseModel):
+    """
+    化学品信息数据类
+    """
 
-    # """
-    # 化学品信息数据类
-    # """
-
-    # idenDataId: str
-    # chemName: str
-    # chemCas: str
-    # chemAlias: str  # 化学品名称
-    # chemEnglishName: str  # 英文名称
-    # appearanceShape: str  # 外观与性状
-    # ph: str  # pH值
-    # meltPoint: str  # 熔点
-    # boilPoint: str  # 沸点
-    # relativeDensity: str  # 相对密度
-    # relativeVaporDensity: str  # 相对蒸气密度
-    # vaporPressure: str  # 蒸气压
-    # combustionHeat: str  # 燃烧热
-    # limitTemp: str  # 临界温度
-    # limitPress: str  # 临界压力
-    # octMatModulus: str  # 辛醇-水分配系数
-    # flashPoint: str  # 闪点
-    # autoIgnitionTemp: str  # 自燃温度
-    # exploLowerLimit: str  # 爆炸下限
-    # exploUpperLimit: str  # 爆炸上限
-    # breakdownTemp: str  # 分解温度
-    # viscosity: str  # 粘度
-    # solubilty: str  # 溶解度
-    # density: str  # 密度
-    # specialDanger: str  # 燃烧与爆炸危险性
-    # physcialChemDanger: str  # 活性反应
-    # healthHazard: str  # 中毒表现
-    # careerContactLimit: str  # 职业接触限值
-    # environmentHazard: str  # 环境危害
-    # firstMeasure: str  # 急救措施
-    # leakageMeasure: str  # 泄漏应急措施
-    # adviceProjectExtinguish: str  # 灭火方法
-    # avoidMater: str  # 避免接触的物质
-    # acuteToxicity: str  # 毒性
-    # riskCategory: str  # 危险性类别
-    # riskDesc: str  # 危险性说明
-    # warnWord: str  # GHS警示词
+    model_config = {"extra": "ignore"}
+    idenDataId: str = Field(..., description="化学品的唯一标识符")
+    chemName: str = Field(..., description="化学品名称")
+    chemEnglishName: str = Field(..., description="化学品英文名称")
+    chemCas: str = Field(..., description="化学品CAS号")
+    chemAlias: str = Field(..., description="化学品别名")
+    ph: str = Field(..., description="pH值")
+    meltPoint: str = Field(..., description="熔点")
+    boilPoint: str = Field(..., description="沸点")
+    relativeDensity: str = Field(..., description="相对密度")
+    relativeVaporDensity: str = Field(..., description="相对蒸气密度")
+    vaporPressure: str = Field(..., description="蒸气压")
+    combustionHeat: str = Field(..., description="燃烧热")
+    limitTemp: str = Field(..., description="临界温度")
+    limitPress: str = Field(..., description="临界压力")
+    octMatModulus: str = Field(..., description="辛醇-水分配系数")
+    flashPoint: str = Field(..., description="闪点")
+    autoIgnitionTemp: str = Field(..., description="自燃温度")
+    exploLowerLimit: str = Field(..., description="爆炸下限")
+    exploUpperLimit: str = Field(..., description="爆炸上限")
+    breakdownTemp: str = Field(..., description="分解温度")
+    viscosity: str = Field(..., description="粘度")
+    solubilty: str = Field(..., description="溶解度")
+    density: str = Field(..., description="密度")
+    specialDanger: str = Field(..., description="燃烧与爆炸危险性")
+    physcialChemDanger: str = Field(..., description="活性反应")
+    healthHazard: str = Field(..., description="中毒表现")
+    careerContactLimit: str = Field(..., description="职业接触限值")
+    environmentHazard: str = Field(..., description="环境危害")
+    firstMeasure: str = Field(..., description="急救措施")
+    leakageMeasure: str = Field(..., description="泄漏应急措施")
+    adviceProjectExtinguish: str = Field(..., description="灭火方法")
+    avoidMater: str = Field(..., description="避免接触的物质")
+    acuteToxicity: str = Field(..., description="毒性")
+    riskCategory: str = Field(..., description="危险性类别")
+    riskDesc: str = Field(..., description="危险性说明")
+    warnWord: str = Field(..., description="GHS警示词")
+    apperanceShape: str = Field(
+        ..., description="外观与性状"
+    )  # 接口字段为apperanceShape，非appearanceShape
 
 
 if __name__ == "__main__":
