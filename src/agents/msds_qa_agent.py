@@ -8,6 +8,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from src.core import ToolSet
+from src.model import GeminiClient, OllamaClient, SiliconflowClient
 
 assert load_dotenv()
 
@@ -31,31 +32,9 @@ def get_graph(tools: list[BaseTool], chat_model: BaseChatModel) -> CompiledState
 
     return app
 
+client = OllamaClient()
+chat_model = client.get_chat_model()
+embed_model = client.get_embed_model()
+tools = [ToolSet.get_nrcc_chem_info_tool()]
 
-if __name__ == "__main__":
-    from src.model import SiliconflowClient
-
-    client = SiliconflowClient()
-    chat_model = client.get_chat_model()
-    embed_model = client.get_embed_model()
-    tools = [ToolSet.get_nrcc_chem_info_tool()]
-
-    graph = get_graph(tools, chat_model)
-
-    out = graph.invoke(
-        {
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "你是一个有帮助的问答机器人，你拥有很多工具可以使用，自主进行回答用户的问题，必要时可以调用工具获取额外的信息。",
-                },
-                {
-                    "role": "human",
-                    "content": "白日依山尽，下一句是什么？",
-                },
-            ]
-        },
-        config={"configurable": {"thread_id": 1}},
-    )
-
-    print(out["messages"][-1].content)
+graph = get_graph(tools, chat_model)

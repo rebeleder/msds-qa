@@ -19,12 +19,18 @@ class ChemInfoRetriever(BaseTool):
     search_engine: ChemicalsDataSearchEngine = ChemicalsDataSearchEngine()
     args_schema: Type[BaseModel] = ChemInfoQuery
 
-    def _run(self, chem_name: str) -> Union[ChemInfoModel, None]:
+    def _run(self, chem_name: str) -> Union[dict, None]:
         """执行化学品信息查询"""
         chem_id = self.search_engine.get_idenDataId(chem_name)
 
         if chem_id:
             chem_info = self.search_engine.get_chemInfo(chem_id)
 
-            return ChemInfoModel(**chem_info)
+            return {
+                description: value
+                for description, value in zip(
+                    ChemInfoModel.get_descriptions(),
+                    ChemInfoModel(**chem_info).model_dump().values(),
+                )
+            }
         return None
