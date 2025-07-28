@@ -16,8 +16,8 @@ class hp:
     siliconflow_chat_model: str = "Qwen/Qwen3-8B"
     siliconflow_embedding_model: str = "BAAI/bge-m3"
 
-    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
-    gemini_chat_model: str = "gemini-2.0-flash"
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    gemini_chat_model: str = "gemini-2.5-flash"
     gemini_embedding_model: str = "models/embedding-001"
 
     max_batch_size: int = 32

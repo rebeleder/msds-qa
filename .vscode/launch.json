@@ -1,6 +1,17 @@
 {
     "configurations": [
-
+        {
+            "name": "server.py",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "src.server:app",
+                "--host", "0.0.0.0",
+                "--port", "8000",
+                "--reload"
+            ]
+        },
         {
             "name": "智能体主入口",
             "type": "debugpy",

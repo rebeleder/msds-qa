@@ -4,7 +4,7 @@ from typing import Union
 import requests
 from pydantic import BaseModel, Field
 
-from .funcs import parallel_map
+from .funcs import parallel_map, GHSS
 
 
 class ChemicalsDataSearchEngine:
@@ -246,6 +246,7 @@ class ChemInfoModel(BaseModel):
     riskCategory: str = Field(..., description="危险性类别")
     riskDesc: str = Field(..., description="危险性说明")
     warnWord: str = Field(..., description="GHS警示词")
+    pictograms: Union[str, list[str]] = Field(..., description="象形图")
     apperanceShape: str = Field(
         ..., description="外观与性状"
     )  # 接口字段为apperanceShape，非appearanceShape
@@ -290,8 +291,32 @@ class ChemInfoModel(BaseModel):
             "危险性类别",
             "危险性说明",
             "GHS警示词",
+            "象形图",
             "外观与性状",
         ]
+
+    def get_formated_info(self) -> dict[str, str]:
+        """
+        获取格式化的化学品信息
+
+        1. 替换换行和回车符为空格
+        2. 对象形图进行中文描述转换
+
+        :return: 格式化后的化学品信息字典
+        """
+        dic = {}
+
+        # 1. 替换换行和回车符为空格
+        for description, value in zip(
+            self.get_descriptions(), self.model_dump().values()
+        ):
+            value: str
+            dic[description] = value.strip().replace("\n", " ").replace("\r", " ")
+        # 2. 对象形图词进行中文描述转换
+        dic["象形图"] = [
+            GHSS.get(pictogram, pictogram) for pictogram in dic["象形图"].split(",")
+        ]
+        return dic
 
 
 if __name__ == "__main__":
@@ -305,4 +330,5 @@ if __name__ == "__main__":
     print(f"化学品信息: {chem_info['chemName']}")
     print(f"安全文件名称: {file_info['safetyFileName']}")
     print(f"安全文件下载地址: {file_info['safetyFileUrl']}")
+    print(f"{ChemInfoModel(**chem_info).get_formated_info()}")
     # search_engine.download_all_msds()

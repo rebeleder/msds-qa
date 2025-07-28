@@ -9,16 +9,12 @@ class OllamaClient:
         self.chat_model = self.get_chat_model()
         self.embed_model = self.get_embed_model()
 
-    def get_chat_model(
-        self,
-        chat_model_name: str = hp.ollama_chat_model,
-    ) -> ChatOllama:
+    def get_chat_model(self, chat_model_name: str = hp.ollama_chat_model) -> ChatOllama:
         chat_model = ChatOllama(model=chat_model_name, base_url=self.base_url)
         return chat_model
 
     def get_embed_model(
-        self,
-        embed_model_name: str = hp.ollama_embedding_model,
+        self, embed_model_name: str = hp.ollama_embedding_model
     ) -> OllamaEmbeddings:
         embed_model = OllamaEmbeddings(model=embed_model_name, base_url=self.base_url)
         return embed_model

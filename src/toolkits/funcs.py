@@ -12,6 +12,18 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 
 
+GHSS: dict[str, str] = {
+    "GHS01": "爆炸品",
+    "GHS02": "易燃品",
+    "GHS03": "氧化剂",
+    "GHS04": "压缩气体",
+    "GHS05": "腐蚀品",
+    "GHS06": "急性毒性",
+    "GHS07": "有害品",
+    "GHS08": "健康危害",
+    "GHS09": "环境危害",
+}
+
 # def handler_exception(func):
 #     """
 #     异常处理修饰器
@@ -126,5 +138,3 @@ def get_json_from_str(text: str) -> dict | None:
         except Exception as E:
             logging.error(f"Failed to repair JSON: {E}")
             return None
-
-

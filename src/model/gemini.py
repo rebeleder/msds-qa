@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from src.config import hp
 
@@ -9,14 +9,12 @@ class GeminiClient:
         self.chat_model = self.get_chat_model()
         self.embed_model = self.get_embed_model()
 
-    def get_chat_model(
-        self, chat_model_name: str = hp.gemini_chat_model
-    ) -> ChatGoogleGenerativeAI:
-        chat_model = ChatGoogleGenerativeAI(model=chat_model_name)
+    def get_chat_model(self, chat_model_name: str = hp.gemini_chat_model) -> ChatOpenAI:
+        chat_model = ChatOpenAI(model=chat_model_name)
         return chat_model
 
     def get_embed_model(
         self, embed_model_name: str = hp.gemini_embedding_model
-    ) -> GoogleGenerativeAIEmbeddings:
-        embed_model = GoogleGenerativeAIEmbeddings(model=embed_model_name)
+    ) -> OpenAIEmbeddings:
+        embed_model = OpenAIEmbeddings(model=embed_model_name)
         return embed_model

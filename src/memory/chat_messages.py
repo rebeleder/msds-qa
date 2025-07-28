@@ -22,7 +22,15 @@ class ChatMessages(ChatMessageHistory):
         self.messages.clear()
 
     def get_ai_messages(self) -> list[str]:
-        return [msg.content for msg in self.messages if isinstance(msg, AIMessage)]
+        return [
+            msg.content
+            for msg in self.messages
+            if isinstance(msg, AIMessage) and isinstance(msg.content, str)
+        ]
 
     def get_human_messages(self) -> list[str]:
-        return [msg.content for msg in self.messages if isinstance(msg, HumanMessage)]
+        return [
+            msg.content
+            for msg in self.messages
+            if isinstance(msg, HumanMessage) and isinstance(msg.content, str)
+        ]
