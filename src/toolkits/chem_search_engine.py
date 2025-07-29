@@ -54,7 +54,9 @@ class ChemicalsDataSearchEngine:
         json_object = response.json()
 
         if json_object["obj"] is not None and json_object["obj"]["records"]:
-            return json_object["obj"]["records"][0]["idenDataId"]
+            # 返回最后一个记录的idenDataId
+            # 可能存在多个记录，取最后一个
+            return json_object["obj"]["records"][-1]["idenDataId"]
         else:
             return None
 
@@ -104,8 +106,14 @@ class ChemicalsDataSearchEngine:
             json=payload,
             headers=self.headers,
         )
-        json_object = response.json()
-        return json_object["obj"]
+
+        # 接口返回的json对象存在值为None的情况，和BaseModel的字段类型不匹配
+        json_object = response.json()["obj"]
+
+        for k, v in json_object.items():
+            if v is None:
+                json_object[k] = ""
+        return json_object
 
     def get_fileInfo(self, response: dict) -> dict:
         """
@@ -210,7 +218,7 @@ class ChemInfoModel(BaseModel):
     """
 
     model_config = {"extra": "ignore"}
-    idenDataId: str = Field(..., description="化学品的唯一标识符")
+    # idenDataId: str = Field(..., description="化学品的唯一标识符")
     chemName: str = Field(..., description="化学品名称")
     chemEnglishName: str = Field(..., description="化学品英文名称")
     chemCas: str = Field(..., description="化学品CAS号")
@@ -255,7 +263,7 @@ class ChemInfoModel(BaseModel):
     def get_descriptions() -> list[str]:
         """获取所有描述"""
         return [
-            "化学品的唯一标识符",
+            # "化学品的唯一标识符",
             "化学品名称",
             "化学品英文名称",
             "化学品CAS号",

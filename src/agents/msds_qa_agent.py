@@ -11,19 +11,30 @@ from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.types import Command
 
+from src.config import hp
 from src.core import ToolSet
 from src.model import GeminiClient, OllamaClient, SiliconflowClient
+from src.db import FaissDB
 
 assert load_dotenv()
 client = GeminiClient()
 chat_model = client.get_chat_model()
-tools = [ToolSet.get_nrcc_chem_info_tool()]
+
+tools = [
+    ToolSet.get_nrcc_chem_info_tool(),
+    ToolSet.get_faiss_retriever_tool(
+        FaissDB(hp.knowledge_space, SiliconflowClient().get_embed_model()).get_db(),
+        "faiss_retriever",
+        "用于检索薄膜操作、磺化装置各组件维护保养方法、IKA旋转蒸发仪清洁消毒指南的检索工具等等实验室器件知识库",
+    ),
+]
 
 
 class AgentState(CopilotKitState):
     language: str
     agent_name: str
     chem_info: dict
+    file_path: str
 
 
 async def chat_node(

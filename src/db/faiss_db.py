@@ -55,6 +55,7 @@ class FaissDB:
         except Exception:
             raise ValueError("无法创建FAISS数据库，请检查文档和嵌入模型是否正确")
         return db
+
     def load_db(self) -> FAISS:
         """加载FAISS数据库"""
         if self.db_exists:

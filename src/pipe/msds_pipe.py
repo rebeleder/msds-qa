@@ -44,7 +44,7 @@ if __name__ == "__main__":
     from src.model import GeminiClient, OllamaClient, SiliconflowClient
     from src.toolkits import get_files_from_kb_space
 
-    client = GeminiClient()
+    client = SiliconflowClient()
 
-    kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")[:5]
+    kb_files = get_files_from_kb_space("/root/Documents/msds-qa/assets")
     msds2db = Msds2DB(files=kb_files, embed_model=client.get_embed_model())
