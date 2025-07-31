@@ -47,33 +47,34 @@ tools = [
 
 
 graph = get_graph(tools)
-out = graph.invoke(
-    {
-        "messages": [
-            {
-                "role": "system",
-                "content": "你是一个有帮助的问答机器人，你拥有很多工具可以使用，你需要根据用户的提问来决定是否调用工具，自主进行回答用户的问题，必要时可以调用工具获取额外的信息。",
-            },
-            {
-                "role": "human",
-                "content": "1,1-二甲基环己烷与火反应会生成某些有害气体，请问这些气体有哪些？请务必调用工具，给出准确、靠谱的结果。",
-            },
-        ]
-    },
-    config={"configurable": {"thread_id": 42}},
-)
+# out = graph.invoke(
+#     {
+#         "messages": [
+#             {
+#                 "role": "system",
+#                 "content": "你是一个有帮助的问答机器人，你拥有很多工具可以使用，你需要根据用户的提问来决定是否调用工具，自主进行回答用户的问题，必要时可以调用工具获取额外的信息。",
+#             },
+#             {
+#                 "role": "human",
+#                 # "content": "1,1-二甲基环己烷与火反应会生成某些有害气体，请问这些气体有哪些？请务必调用工具，给出准确、靠谱的结果。",
+#                 "content": prompt,
+#             },
+#         ]
+#     },
+#     config={"configurable": {"thread_id": 42}},
+# )
 
 
 
-serializable = {
-    "messages": [
-        {
-        "type": type(m).__name__,
-        "content": m.content
-        }
-    for m in out["messages"]
-]
-}
+# serializable = {
+#     "messages": [
+#         {
+#         "type": type(m).__name__,
+#         "content": m.content
+#         }
+#     for m in out["messages"]
+# ]
+# }
 
-# print(json.dumps(serializable, indent=2, ensure_ascii=False))
-pprint.pprint(serializable)
+# # print(json.dumps(serializable, indent=2, ensure_ascii=False))
+# pprint.pprint(serializable)

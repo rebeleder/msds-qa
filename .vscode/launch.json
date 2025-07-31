@@ -31,13 +31,13 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "st_main",
+            "name": "st_main2",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "args": [
                 "run",
-                "${workspaceFolder}/webui/st_main.py",
+                "${workspaceFolder}/webui/st_main2.py",
             ],
             "console": "integratedTerminal",
             "env": {
